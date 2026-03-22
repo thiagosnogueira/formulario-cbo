@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solicitação de Eventos</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="hero">
+      <div>
+        <span class="badge">Formulário online</span>
+        <h1>Solicitação de Eventos</h1>
+        <p>
+          Preencha os dados do evento, selecione os espaços da igreja e marque os
+          ministérios que precisam ser acionados. Apenas os líderes dos ministérios
+          selecionados serão notificados.
+        </p>
+      </div>
+    </section>
+
+    <section class="card">
+      <form id="eventForm" class="form-grid">
+        <div class="field full">
+          <label for="nomeEvento">Nome do evento</label>
+          <input id="nomeEvento" name="nomeEvento" type="text" required placeholder="Ex.: Conferência da Juventude" />
+        </div>
+
+        <div class="field">
+          <label for="responsavel">Nome do responsável</label>
+          <input id="responsavel" name="responsavel" type="text" required placeholder="Nome completo" />
+        </div>
+
+        <div class="field">
+          <label for="contato">Contato</label>
+          <input id="contato" name="contato" type="text" required placeholder="Telefone, WhatsApp ou e-mail" />
+        </div>
+
+        <div class="field">
+          <label for="dataInicio">Data e hora do início</label>
+          <input id="dataInicio" name="dataInicio" type="datetime-local" required />
+        </div>
+
+        <div class="field">
+          <label for="dataFim">Data e hora do fim</label>
+          <input id="dataFim" name="dataFim" type="datetime-local" required />
+        </div>
+
+        <div class="field full">
+          <label>Espaços da igreja que vai precisar utilizar no evento</label>
+          <div class="checkbox-grid" id="spacesContainer"></div>
+        </div>
+
+        <div class="field full">
+          <label for="objetivo">Objetivo do evento</label>
+          <textarea id="objetivo" name="objetivo" rows="5" required placeholder="Descreva o objetivo do evento, público esperado e observações importantes."></textarea>
+        </div>
+
+        <div class="field full">
+          <label>Qual ministério precisa ser acionado</label>
+          <div class="checkbox-grid" id="ministriesContainer"></div>
+        </div>
+
+        <div class="field full actions">
+          <button type="submit" id="submitButton">Enviar solicitação</button>
+        </div>
+
+        <div id="feedback" class="feedback hidden" aria-live="polite"></div>
+      </form>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
