@@ -46,7 +46,7 @@ const CONFIG = {
     },
     louvor: {
       label: 'Louvor',
-      emails: ['lider.louvor@exemplo.com'],
+      emails: ['thiago.thinog@gmail.com'],
       whatsapp: []
     }
   },
