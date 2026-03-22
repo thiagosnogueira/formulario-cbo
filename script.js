@@ -1,4 +1,4 @@
-const API_URL = "COLE_AQUI_A_URL_DO_SEU_WEB_APP_DO_APPS_SCRIPT";
+const API_URL = "https://script.google.com/macros/s/AKfycbzi8rH_ynhUwMwXig9SHRuxUMEDlFa9rsPeJfukfvcDCw2m7WaybAnW1-z0yS6LPPeD/exec";
 
 const SPACES = [
   { id: "templo_maior", label: "Templo Maior" },
