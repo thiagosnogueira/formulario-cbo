@@ -1,5 +1,5 @@
 const CONFIG = {
-  spreadsheetId: "1eQ-Q1nbEa4xSrw0QQ4f0uGlG66NcLS292XkHf57HMAQ",
+  spreadsheetId: "1eQ-Q1nbEa4xSrw0QQ4fOuGlG66NcLS292XkHf57HMAQ",
   sheetName: "Solicitacoes",
   ministries: {
     sonoplastia: { email: "" },
