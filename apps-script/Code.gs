@@ -17,7 +17,7 @@ const CONFIG = {
     esportes: { email: "vladimir.lapa@hotmail.com" },
     ensino: { email: "vilarmilton@gmail.com" },
     mensageiras_do_rei: { email: "nogueiraadeline@gmail.com" },
-    infantil: { email: "EMAIL_INFANTIL@exemplo.com" },
+    infantil: { email: "alenunesp@gmail.com" },
     missoes: { email: "EMAIL_MISSOES@exemplo.com" },
     eventos: { email: "vinha.p@hotmail.com" },
     casais: { email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"] },
