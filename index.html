@@ -6,11 +6,8 @@
   <title>Solicitação de Eventos</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
   <div class="container">
-
-    <!-- HEADER COM LOGO -->
     <div class="header">
       <div class="header-text">
         <span class="badge">Formulário online</span>
@@ -22,57 +19,60 @@
       </div>
 
       <div class="header-logo">
-        <img src="logo_cbo.png" alt="Logo CBO" />
+        <img src="logo-cbo.png" alt="Logo CBO" />
       </div>
     </div>
 
-    <!-- FORM -->
-    <form id="eventForm">
-
+    <form id="eventForm" class="card">
       <div class="form-group">
-        <label>Nome do evento</label>
-        <input type="text" name="nomeEvento" required />
+        <label for="nomeEvento">Nome do evento</label>
+        <input type="text" id="nomeEvento" name="nomeEvento" placeholder="Ex.: Conferência da Juventude" required />
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label>Nome do responsável</label>
-          <input type="text" name="responsavel" required />
+          <label for="responsavel">Nome do responsável</label>
+          <input type="text" id="responsavel" name="responsavel" placeholder="Nome completo" required />
         </div>
 
         <div class="form-group">
-          <label>Contato</label>
-          <input type="text" name="contato" required />
+          <label for="contato">Contato</label>
+          <input type="text" id="contato" name="contato" placeholder="Telefone, WhatsApp ou e-mail" required />
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label>Data e hora do início</label>
-          <input type="datetime-local" name="dataInicio" required />
+          <label for="dataInicio">Data e hora do início</label>
+          <input type="datetime-local" id="dataInicio" name="dataInicio" required />
         </div>
 
         <div class="form-group">
-          <label>Data e hora do fim</label>
-          <input type="datetime-local" name="dataFim" required />
+          <label for="dataFim">Data e hora do fim</label>
+          <input type="datetime-local" id="dataFim" name="dataFim" required />
         </div>
       </div>
 
-      <h3>Espaços da igreja</h3>
+      <div class="section-title">Espaços da igreja</div>
       <div id="spacesContainer" class="grid"></div>
 
       <div class="form-group">
-        <label>Objetivo do evento</label>
-        <textarea name="objetivo" rows="3" required></textarea>
+        <label for="objetivo">Objetivo do evento</label>
+        <textarea
+          id="objetivo"
+          name="objetivo"
+          rows="4"
+          placeholder="Descreva o objetivo do evento, público esperado e observações importantes."
+          required
+        ></textarea>
       </div>
 
-      <h3>Ministérios</h3>
+      <div class="section-title">Qual ministério precisa ser acionado</div>
       <div id="ministriesContainer" class="grid"></div>
 
       <button id="submitButton" type="submit">Enviar solicitação</button>
 
       <div id="feedback" class="feedback hidden"></div>
-
     </form>
   </div>
 
