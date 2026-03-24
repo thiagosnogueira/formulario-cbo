@@ -1,13 +1,24 @@
 const CONFIG = {
   spreadsheetId: "1eQ-Q1nbEa4xSrw0QQ4fOuGlG66NcLS292XkHf57HMAQ",
   sheetName: "Solicitacoes",
+  alwaysSendTo: "contato@cboceanica.com.br",
   ministries: {
+    recepcao: { email: "fcotrim25@hotmail.com" },
     sonoplastia: { email: "judsongds@hotmail.com" },
-    midia: { email: "" },
-    comunicacao: { email: "" },
-    recepcao: { email: "" },
-    infantil: { email: "" },
-    louvor: { email: "thiago.thinog@gmail.com" }
+    midia: { email: "EMAIL_MIDIA@exemplo.com" },
+    comunicacao: { email: "EMAIL_COMUNICACAO@exemplo.com" },
+    louvor: { email: "andreyrfreire@gmail.com" },
+    juventude: { email: ["thiago.thinog@gmail.com", "nogueiraadeline@gmail.com"] },
+    mulheres: { email: "EMAIL_MULHERES@exemplo.com" },
+    acao_social: { email: "EMAIL_ACAO_SOCIAL@exemplo.com" },
+    esportes: { email: "vladimir.lapa@hotmail.com" },
+    ensino: { email: "vilarmilton@gmail.com" },
+    mensageiras_do_rei: { email: "nogueiraadeline@gmail.com" },
+    infantil: { email: "EMAIL_INFANTIL@exemplo.com" },
+    missoes: { email: "EMAIL_MISSOES@exemplo.com" },
+    eventos: { email: "vinha.p@hotmail.com" },
+    casais: { email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"] },
+    cr: { email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"] }
   }
 };
 
