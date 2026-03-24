@@ -2,7 +2,7 @@ const CONFIG = {
   spreadsheetId: "1eQ-Q1nbEa4xSrw0QQ4fOuGlG66NcLS292XkHf57HMAQ",
   sheetName: "Solicitacoes",
   ministries: {
-    sonoplastia: { email: "" },
+    sonoplastia: { email: "judsongds@hotmail.com" },
     midia: { email: "" },
     comunicacao: { email: "" },
     recepcao: { email: "" },
