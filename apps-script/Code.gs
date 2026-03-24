@@ -66,25 +66,72 @@ const CONFIG = {
 
 function doPost(e) {
   try {
-    const payload = JSON.parse(e.postData.contents || '{}');
-    validatePayload(payload);
+    const data = parseRequestData_(e);
 
-    const selectedMinistries = payload.ministerios
-      .filter((key) => CONFIG.ministries[key])
-      .map((key) => ({ key, ...CONFIG.ministries[key] }));
+    validarDados(data);
 
-    appendToSheet(payload, selectedMinistries);
-    notifyLeadersByEmail(payload, selectedMinistries);
+    const sheet = getOrCreateSheet_();
 
-    if (CONFIG.whatsapp.enabled) {
-      notifyLeadersByWhatsApp(payload, selectedMinistries);
-    }
+    const espacos = Array.isArray(data.espacos) ? data.espacos.join(", ") : "";
+    const ministerios = Array.isArray(data.ministerios) ? data.ministerios.join(", ") : "";
 
-    return jsonResponse({ ok: true, message: 'Solicitação registrada com sucesso.' });
+    sheet.appendRow([
+      new Date(),
+      data.nomeEvento || "",
+      data.nomeResponsavel || "",
+      data.contato || "",
+      data.dataHoraInicio || "",
+      data.dataHoraFim || "",
+      espacos,
+      data.objetivo || "",
+      ministerios
+    ]);
+
+    enviarEmailsMinisterios_(data);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: true,
+        message: "Solicitação enviada com sucesso."
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+
   } catch (error) {
-    console.error(error);
-    return jsonResponse({ ok: false, message: error.message || 'Erro interno.' }, 400);
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        success: false,
+        message: error.message || "Erro ao processar solicitação."
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
+}
+
+function parseRequestData_(e) {
+  if (e.postData && e.postData.contents) {
+    try {
+      return JSON.parse(e.postData.contents);
+    } catch (err) {
+      // continua para tentar ler como form normal
+    }
+  }
+
+  const p = e.parameter || {};
+
+  return {
+    nomeEvento: p.nomeEvento || "",
+    nomeResponsavel: p.nomeResponsavel || "",
+    contato: p.contato || "",
+    dataHoraInicio: p.dataHoraInicio || "",
+    dataHoraFim: p.dataHoraFim || "",
+    objetivo: p.objetivo || "",
+    espacos: normalizeArray_(p.espacos),
+    ministerios: normalizeArray_(p.ministerios)
+  };
+}
+
+function normalizeArray_(value) {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
 }
 
 function validatePayload(payload) {
