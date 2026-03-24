@@ -148,11 +148,39 @@ function getOrCreateSheet_() {
 }
 
 function enviarEmailsMinisterios_(data) {
-  const emails = (data.ministerios || [])
+  const emailsMinisterios = (data.ministerios || [])
     .map(id => CONFIG.ministries[id] && CONFIG.ministries[id].email)
     .filter(Boolean);
 
+  const emails = [...new Set([
+    ...(CONFIG.alwaysSendTo ? [CONFIG.alwaysSendTo] : []),
+    ...emailsMinisterios
+  ])];
+
   if (!emails.length) return;
+
+  const labels = {
+    recepcao: "Recepção",
+    sonoplastia: "Sonoplastia",
+    midia: "Mídia",
+    comunicacao: "Comunicação",
+    louvor: "Louvor",
+    juventude: "Juventude",
+    mulheres: "Mulheres",
+    acao_social: "Ação Social",
+    esportes: "Esportes",
+    ensino: "Ensino",
+    mensageiras_do_rei: "Mensageiras do Rei",
+    infantil: "Infantil",
+    missoes: "Missões",
+    eventos: "Eventos",
+    casais: "Casais",
+    cr: "CR"
+  };
+
+  const ministeriosFormatados = (data.ministerios || [])
+    .map(id => labels[id] || id)
+    .join(", ");
 
   const assunto = `CBO - Nova solicitação de evento: ${data.nomeEvento}`;
 
@@ -166,7 +194,7 @@ function enviarEmailsMinisterios_(data) {
       <p><strong>Fim:</strong> ${escapeHtml_(data.dataHoraFim)}</p>
       <p><strong>Espaços:</strong> ${escapeHtml_((data.espacos || []).join(", "))}</p>
       <p><strong>Objetivo:</strong> ${escapeHtml_(data.objetivo)}</p>
-      <p><strong>Ministérios acionados:</strong> ${escapeHtml_((data.ministerios || []).join(", "))}</p>
+      <p><strong>Ministérios acionados:</strong> ${escapeHtml_(ministeriosFormatados)}</p>
     </div>
   `;
 
