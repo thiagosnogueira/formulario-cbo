@@ -143,7 +143,7 @@ function enviarEmailsMinisterios_(data) {
 
   if (!emails.length) return;
 
-  const assunto = `Nova solicitação de evento: ${data.nomeEvento}`;
+  const assunto = `CBO - Nova solicitação de evento: ${data.nomeEvento}`;
 
   const htmlBody = `
     <div style="font-family: Arial, sans-serif; line-height: 1.6;">
