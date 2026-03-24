@@ -1,79 +1,32 @@
-/**
- * Backend para formulário hospedado no GitHub Pages.
- *
- * Fluxo:
- * 1. O site envia um POST JSON para este Web App.
- * 2. O script registra a solicitação em uma aba do Google Sheets.
- * 3. O script envia e-mails apenas para os líderes dos ministérios marcados.
- * 4. Opcionalmente, também envia WhatsApp via WhatsApp Cloud API.
- */
-
 const CONFIG = {
-  spreadsheetId: 'COLE_AQUI_O_ID_DA_PLANILHA',
-  sheetName: 'Solicitacoes',
-  timezone: 'America/Sao_Paulo',
-  whatsapp: {
-    enabled: false,
-    phoneNumberId: 'COLE_AQUI_O_PHONE_NUMBER_ID',
-    accessToken: 'COLE_AQUI_O_ACCESS_TOKEN',
-    apiVersion: 'v23.0'
-  },
+  spreadsheetId: "1eQ-Q1nbEa4xSrw0QQ4f0uGlG66NcLS292XkHf57HMAQ",
+  sheetName: "Solicitacoes",
   ministries: {
-    sonoplastia: {
-      label: 'Sonoplastia',
-      emails: ['lider.sonoplastia@exemplo.com'],
-      whatsapp: []
-    },
-    midia: {
-      label: 'Mídia',
-      emails: ['lider.midia@exemplo.com'],
-      whatsapp: []
-    },
-    comunicacao: {
-      label: 'Comunicação',
-      emails: ['lider.comunicacao@exemplo.com'],
-      whatsapp: []
-    },
-    recepcao: {
-      label: 'Recepção',
-      emails: ['lider.recepcao@exemplo.com'],
-      whatsapp: []
-    },
-    infantil: {
-      label: 'Infantil',
-      emails: ['lider.infantil@exemplo.com'],
-      whatsapp: []
-    },
-    louvor: {
-      label: 'Louvor',
-      emails: ['thiago.thinog@gmail.com'],
-      whatsapp: []
-    }
-  },
-  spaces: {
-    templo_maior: 'Templo Maior',
-    templo_menor: 'Templo Menor',
-    sala_lideres: 'Sala dos líderes',
-    salao_vermelho: 'Salão vermelho',
-    sala_azul: 'Sala Azul',
-    sala_juventude: 'Sala da juventude',
-    cozinha: 'Cozinha',
-    gramado: 'Gramado',
-    area_lazer: 'Área de Lazer',
-    piscina: 'Piscina'
+    sonoplastia: { email: "" },
+    midia: { email: "" },
+    comunicacao: { email: "" },
+    recepcao: { email: "" },
+    infantil: { email: "" },
+    louvor: { email: "thiago.thinog@gmail.com" }
   }
 };
+
+function doGet() {
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      success: true,
+      message: "Web App ativo."
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
 
 function doPost(e) {
   try {
     const data = parseRequestData_(e);
 
-    validarDados(data);
+    validarDados_(data);
 
     const sheet = getOrCreateSheet_();
-
-    const espacos = Array.isArray(data.espacos) ? data.espacos.join(", ") : "";
-    const ministerios = Array.isArray(data.ministerios) ? data.ministerios.join(", ") : "";
 
     sheet.appendRow([
       new Date(),
@@ -82,9 +35,9 @@ function doPost(e) {
       data.contato || "",
       data.dataHoraInicio || "",
       data.dataHoraFim || "",
-      espacos,
+      (data.espacos || []).join(", "),
       data.objetivo || "",
-      ministerios
+      (data.ministerios || []).join(", ")
     ]);
 
     enviarEmailsMinisterios_(data);
@@ -111,7 +64,7 @@ function parseRequestData_(e) {
     try {
       return JSON.parse(e.postData.contents);
     } catch (err) {
-      // continua para tentar ler como form normal
+      // continua e tenta ler como form-data
     }
   }
 
@@ -124,8 +77,8 @@ function parseRequestData_(e) {
     dataHoraInicio: p.dataHoraInicio || "",
     dataHoraFim: p.dataHoraFim || "",
     objetivo: p.objetivo || "",
-    espacos: normalizeArray_(p.espacos),
-    ministerios: normalizeArray_(p.ministerios)
+    espacos: normalizeArray_(e.parameters && e.parameters.espacos ? e.parameters.espacos : p.espacos),
+    ministerios: normalizeArray_(e.parameters && e.parameters.ministerios ? e.parameters.ministerios : p.ministerios)
   };
 }
 
@@ -134,148 +87,89 @@ function normalizeArray_(value) {
   return Array.isArray(value) ? value : [value];
 }
 
-function validatePayload(payload) {
-  const requiredFields = ['nomeEvento', 'responsavel', 'contato', 'dataInicio', 'dataFim', 'espacos', 'objetivo', 'ministerios'];
+function validarDados_(data) {
+  if (!data.nomeEvento) throw new Error("Nome do evento é obrigatório.");
+  if (!data.nomeResponsavel) throw new Error("Nome do responsável é obrigatório.");
+  if (!data.contato) throw new Error("Contato é obrigatório.");
+  if (!data.dataHoraInicio) throw new Error("Data e hora de início é obrigatória.");
+  if (!data.dataHoraFim) throw new Error("Data e hora de fim é obrigatória.");
+  if (!data.objetivo) throw new Error("Objetivo é obrigatório.");
+  if (!Array.isArray(data.espacos) || data.espacos.length === 0) {
+    throw new Error("Selecione ao menos um espaço.");
+  }
+  if (!Array.isArray(data.ministerios) || data.ministerios.length === 0) {
+    throw new Error("Selecione ao menos um ministério.");
+  }
 
-  requiredFields.forEach((field) => {
-    if (!payload[field] || (Array.isArray(payload[field]) && payload[field].length === 0)) {
-      throw new Error('Campo obrigatório ausente: ' + field);
-    }
-  });
+  const inicio = new Date(data.dataHoraInicio);
+  const fim = new Date(data.dataHoraFim);
 
-  const startDate = new Date(payload.dataInicio);
-  const endDate = new Date(payload.dataFim);
+  if (isNaN(inicio.getTime()) || isNaN(fim.getTime())) {
+    throw new Error("Datas inválidas.");
+  }
 
-  if (!(endDate > startDate)) {
-    throw new Error('A data/hora final precisa ser maior que a data/hora inicial.');
+  if (fim <= inicio) {
+    throw new Error("A data/hora de fim deve ser maior que a de início.");
   }
 }
 
-function appendToSheet(payload, selectedMinistries) {
-  const spreadsheet = SpreadsheetApp.openById(CONFIG.spreadsheetId);
-  const sheet = spreadsheet.getSheetByName(CONFIG.sheetName) || spreadsheet.insertSheet(CONFIG.sheetName);
+function getOrCreateSheet_() {
+  const ss = SpreadsheetApp.openById(CONFIG.spreadsheetId);
+  let sheet = ss.getSheetByName(CONFIG.sheetName);
 
-  if (sheet.getLastRow() === 0) {
+  if (!sheet) {
+    sheet = ss.insertSheet(CONFIG.sheetName);
     sheet.appendRow([
-      'Criado em',
-      'Nome do evento',
-      'Responsável',
-      'Contato',
-      'Data/hora início',
-      'Data/hora fim',
-      'Espaços solicitados',
-      'Objetivo do evento',
-      'Ministérios acionados'
+      "Timestamp",
+      "Nome do Evento",
+      "Nome do Responsável",
+      "Contato",
+      "Data/Hora Início",
+      "Data/Hora Fim",
+      "Espaços",
+      "Objetivo",
+      "Ministérios"
     ]);
   }
 
-  sheet.appendRow([
-    Utilities.formatDate(new Date(), CONFIG.timezone, 'dd/MM/yyyy HH:mm:ss'),
-    payload.nomeEvento,
-    payload.responsavel,
-    payload.contato,
-    formatDateTime(payload.dataInicio),
-    formatDateTime(payload.dataFim),
-    mapSpaces(payload.espacos).join(', '),
-    payload.objetivo,
-    selectedMinistries.map((m) => m.label).join(', ')
-  ]);
+  return sheet;
 }
 
-function notifyLeadersByEmail(payload, selectedMinistries) {
-  selectedMinistries.forEach((ministry) => {
-    if (!ministry.emails || ministry.emails.length === 0) return;
+function enviarEmailsMinisterios_(data) {
+  const emails = (data.ministerios || [])
+    .map(id => CONFIG.ministries[id] && CONFIG.ministries[id].email)
+    .filter(Boolean);
 
-    const subject = '[Solicitação de Evento] ' + ministry.label + ' - ' + payload.nomeEvento;
-    const body = buildLeaderMessage(payload, ministry.label);
+  if (!emails.length) return;
 
-    MailApp.sendEmail({
-      to: ministry.emails.join(','),
-      subject,
-      body
-    });
+  const assunto = `Nova solicitação de evento: ${data.nomeEvento}`;
+
+  const htmlBody = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+      <h2>Nova solicitação de evento</h2>
+      <p><strong>Nome do evento:</strong> ${escapeHtml_(data.nomeEvento)}</p>
+      <p><strong>Responsável:</strong> ${escapeHtml_(data.nomeResponsavel)}</p>
+      <p><strong>Contato:</strong> ${escapeHtml_(data.contato)}</p>
+      <p><strong>Início:</strong> ${escapeHtml_(data.dataHoraInicio)}</p>
+      <p><strong>Fim:</strong> ${escapeHtml_(data.dataHoraFim)}</p>
+      <p><strong>Espaços:</strong> ${escapeHtml_((data.espacos || []).join(", "))}</p>
+      <p><strong>Objetivo:</strong> ${escapeHtml_(data.objetivo)}</p>
+      <p><strong>Ministérios acionados:</strong> ${escapeHtml_((data.ministerios || []).join(", "))}</p>
+    </div>
+  `;
+
+  MailApp.sendEmail({
+    to: emails.join(","),
+    subject: assunto,
+    htmlBody: htmlBody
   });
 }
 
-function notifyLeadersByWhatsApp(payload, selectedMinistries) {
-  selectedMinistries.forEach((ministry) => {
-    (ministry.whatsapp || []).forEach((phone) => {
-      sendWhatsAppText(phone, buildLeaderWhatsAppMessage(payload, ministry.label));
-    });
-  });
-}
-
-function sendWhatsAppText(to, text) {
-  const url = 'https://graph.facebook.com/' + CONFIG.whatsapp.apiVersion + '/' + CONFIG.whatsapp.phoneNumberId + '/messages';
-
-  const payload = {
-    messaging_product: 'whatsapp',
-    recipient_type: 'individual',
-    to,
-    type: 'text',
-    text: {
-      preview_url: false,
-      body: text
-    }
-  };
-
-  const response = UrlFetchApp.fetch(url, {
-    method: 'post',
-    contentType: 'application/json',
-    headers: {
-      Authorization: 'Bearer ' + CONFIG.whatsapp.accessToken
-    },
-    payload: JSON.stringify(payload),
-    muteHttpExceptions: true
-  });
-
-  const status = response.getResponseCode();
-  if (status < 200 || status >= 300) {
-    throw new Error('Falha ao enviar WhatsApp. Status: ' + status + ' / Resposta: ' + response.getContentText());
-  }
-}
-
-function buildLeaderMessage(payload, ministryLabel) {
-  return [
-    'Nova solicitação de evento para o ministério de ' + ministryLabel + '.',
-    '',
-    'Nome do evento: ' + payload.nomeEvento,
-    'Responsável: ' + payload.responsavel,
-    'Contato: ' + payload.contato,
-    'Data e hora do início: ' + formatDateTime(payload.dataInicio),
-    'Data e hora do fim: ' + formatDateTime(payload.dataFim),
-    'Espaços solicitados: ' + mapSpaces(payload.espacos).join(', '),
-    'Ministérios marcados: ' + payload.ministerios.map((key) => CONFIG.ministries[key]?.label || key).join(', '),
-    '',
-    'Objetivo do evento:',
-    payload.objetivo
-  ].join('\n');
-}
-
-function buildLeaderWhatsAppMessage(payload, ministryLabel) {
-  return [
-    'Nova solicitação de evento para *' + ministryLabel + '*.',
-    'Evento: ' + payload.nomeEvento,
-    'Responsável: ' + payload.responsavel,
-    'Contato: ' + payload.contato,
-    'Início: ' + formatDateTime(payload.dataInicio),
-    'Fim: ' + formatDateTime(payload.dataFim),
-    'Espaços: ' + mapSpaces(payload.espacos).join(', '),
-    'Objetivo: ' + payload.objetivo
-  ].join('\n');
-}
-
-function mapSpaces(spaceKeys) {
-  return (spaceKeys || []).map((key) => CONFIG.spaces[key] || key);
-}
-
-function formatDateTime(value) {
-  if (!value) return '';
-  return Utilities.formatDate(new Date(value), CONFIG.timezone, 'dd/MM/yyyy HH:mm');
-}
-
-function jsonResponse(data) {
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+function escapeHtml_(text) {
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
