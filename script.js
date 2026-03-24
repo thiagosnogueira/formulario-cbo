@@ -46,6 +46,11 @@ function showFeedback(message, type) {
   feedback.classList.remove("hidden");
 }
 
+function hideFeedback() {
+  feedback.classList.add("hidden");
+  feedback.textContent = "";
+}
+
 function getCheckedValues(name) {
   return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(el => el.value);
 }
@@ -56,8 +61,66 @@ function validateDateRange(start, end) {
   return endDate > startDate;
 }
 
-async function handleSubmit(event) {
+function createHiddenIframe() {
+  const iframeName = "apps_script_hidden_iframe";
+
+  let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+
+  if (!iframe) {
+    iframe = document.createElement("iframe");
+    iframe.name = iframeName;
+    iframe.style.display = "none";
+    document.body.appendChild(iframe);
+  }
+
+  return iframeName;
+}
+
+function appendHiddenField(tempForm, name, value) {
+  if (Array.isArray(value)) {
+    value.forEach(item => {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = name;
+      input.value = item;
+      tempForm.appendChild(input);
+    });
+    return;
+  }
+
+  const input = document.createElement("input");
+  input.type = "hidden";
+  input.name = name;
+  input.value = value ?? "";
+  tempForm.appendChild(input);
+}
+
+function sendViaHiddenForm(payload) {
+  const iframeName = createHiddenIframe();
+
+  const tempForm = document.createElement("form");
+  tempForm.method = "POST";
+  tempForm.action = API_URL;
+  tempForm.target = iframeName;
+  tempForm.style.display = "none";
+
+  appendHiddenField(tempForm, "nomeEvento", payload.nomeEvento);
+  appendHiddenField(tempForm, "nomeResponsavel", payload.nomeResponsavel);
+  appendHiddenField(tempForm, "contato", payload.contato);
+  appendHiddenField(tempForm, "dataHoraInicio", payload.dataHoraInicio);
+  appendHiddenField(tempForm, "dataHoraFim", payload.dataHoraFim);
+  appendHiddenField(tempForm, "espacos", payload.espacos);
+  appendHiddenField(tempForm, "objetivo", payload.objetivo);
+  appendHiddenField(tempForm, "ministerios", payload.ministerios);
+
+  document.body.appendChild(tempForm);
+  tempForm.submit();
+  document.body.removeChild(tempForm);
+}
+
+function handleSubmit(event) {
   event.preventDefault();
+  hideFeedback();
 
   const espacos = getCheckedValues("espacos");
   const ministerios = getCheckedValues("ministerios");
@@ -84,10 +147,10 @@ async function handleSubmit(event) {
 
   const payload = {
     nomeEvento: form.nomeEvento.value.trim(),
-    responsavel: form.responsavel.value.trim(),
+    nomeResponsavel: form.responsavel.value.trim(),
     contato: form.contato.value.trim(),
-    dataInicio: form.dataInicio.value,
-    dataFim: form.dataFim.value,
+    dataHoraInicio: form.dataInicio.value,
+    dataHoraFim: form.dataFim.value,
     espacos,
     objetivo: form.objetivo.value.trim(),
     ministerios
@@ -97,23 +160,12 @@ async function handleSubmit(event) {
   submitButton.textContent = "Enviando...";
 
   try {
-    const response = await fetch(API_URL, {
-  method: "POST",
-  mode: "no-cors",
-  body: JSON.stringify(payload)
-});
-
-    const result = await response.json();
-
-    if (!response.ok || !result.ok) {
-      throw new Error(result.message || "Falha ao enviar a solicitação.");
-    }
-
-    showFeedback("Solicitação enviada com sucesso. Os ministérios selecionados foram notificados.", "success");
+    sendViaHiddenForm(payload);
+    showFeedback("Solicitação enviada com sucesso. Verifique a planilha e os e-mails dos ministérios selecionados.", "success");
     form.reset();
   } catch (error) {
     console.error(error);
-    showFeedback(error.message || "Erro inesperado ao enviar a solicitação.", "error");
+    showFeedback("Erro inesperado ao enviar a solicitação.", "error");
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Enviar solicitação";
