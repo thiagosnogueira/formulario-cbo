@@ -14,12 +14,21 @@ const SPACES = [
 ];
 
 const MINISTRIES = [
+  { id: "recepcao", label: "Recepção", description: "Aciona o time de recepção." },
   { id: "sonoplastia", label: "Sonoplastia", description: "Aciona o time de som." },
   { id: "midia", label: "Mídia", description: "Aciona o time de mídia e projeção." },
   { id: "comunicacao", label: "Comunicação", description: "Aciona o time de comunicação e divulgação." },
-  { id: "recepcao", label: "Recepção", description: "Aciona o time de recepção." },
+  { id: "juventude", label: "Juventude", description: "Aciona o ministério de juventude." },
+  { id: "mulheres", label: "Mulheres", description: "Aciona o ministério de mulheres." },
+  { id: "acao_social", label: "Ação Social", description: "Aciona o ministério de ação social." },
+  { id: "esportes", label: "Esportes", description: "Aciona o ministério de esportes." },
+  { id: "ensino", label: "Ensino", description: "Aciona o ministério de ensino." },
+  { id: "mensageiras_do_rei", label: "Mensageiras do Rei", description: "Aciona o ministério Mensageiras do Rei." },
   { id: "infantil", label: "Infantil", description: "Aciona o ministério infantil." },
-  { id: "louvor", label: "Louvor", description: "Aciona o ministério de louvor." }
+  { id: "missoes", label: "Missões", description: "Aciona o ministério de missões." },
+  { id: "eventos", label: "Eventos", description: "Aciona o ministério de eventos." },
+  { id: "casais", label: "Casais", description: "Aciona o ministério de casais." },
+  { id: "cr", label: "CR", description: "Aciona o ministério CR." }
 ];
 
 const form = document.getElementById("eventForm");
