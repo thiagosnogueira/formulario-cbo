@@ -1,7 +1,12 @@
 const CONFIG = {
   spreadsheetId: "1eQ-Q1nbEa4xSrw0QQ4fOuGlG66NcLS292XkHf57HMAQ",
   sheetName: "Solicitacoes",
-  alwaysSendTo: "contato@cboceanica.com.br",
+  alwaysSendTo: [
+  "contato@cboceanica.com.br",
+  "tarsis_alecrim@hotmail.com"
+]
+
+"contato@cboceanica.com.br",
   ministries: {
     recepcao: { email: "fcotrim25@hotmail.com" },
     sonoplastia: { email: "judsongds@hotmail.com" },
