@@ -10,7 +10,7 @@ const CONFIG = {
     louvor: { email: "andreyrfreire@gmail.com" },
     juventude: { email: ["thiago.thinog@gmail.com", "nogueiraadeline@gmail.com"] },
     mulheres: { email: "EMAIL_MULHERES@exemplo.com" },
-    acao_social: { email: "EMAIL_ACAO_SOCIAL@exemplo.com" },
+    acao_social: { email: "danielebastosadv@yahoo.com" },
     esportes: { email: "vladimir.lapa@hotmail.com" },
     ensino: { email: "vilarmilton@gmail.com" },
     mensageiras_do_rei: { email: "nogueiraadeline@gmail.com" },
