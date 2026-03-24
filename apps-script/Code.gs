@@ -6,7 +6,6 @@ const CONFIG = {
   "tarsis_alecrim@hotmail.com"
 ]
 
-"contato@cboceanica.com.br",
   ministries: {
     recepcao: { email: "fcotrim25@hotmail.com" },
     sonoplastia: { email: "judsongds@hotmail.com" },
