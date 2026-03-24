@@ -64,11 +64,12 @@ function parseRequestData_(e) {
     try {
       return JSON.parse(e.postData.contents);
     } catch (err) {
-      // continua e tenta ler como form-data
+      // se não for JSON, continua para ler como form POST
     }
   }
 
   const p = e.parameter || {};
+  const ps = e.parameters || {};
 
   return {
     nomeEvento: p.nomeEvento || "",
@@ -77,8 +78,8 @@ function parseRequestData_(e) {
     dataHoraInicio: p.dataHoraInicio || "",
     dataHoraFim: p.dataHoraFim || "",
     objetivo: p.objetivo || "",
-    espacos: normalizeArray_(e.parameters && e.parameters.espacos ? e.parameters.espacos : p.espacos),
-    ministerios: normalizeArray_(e.parameters && e.parameters.ministerios ? e.parameters.ministerios : p.ministerios)
+    espacos: normalizeArray_(ps.espacos || p.espacos),
+    ministerios: normalizeArray_(ps.ministerios || p.ministerios)
   };
 }
 
