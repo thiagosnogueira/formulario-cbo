@@ -18,6 +18,7 @@ const MINISTRIES = [
   { id: "sonoplastia", label: "Sonoplastia", description: "Aciona o time de som." },
   { id: "midia", label: "Mídia", description: "Aciona o time de mídia e projeção." },
   { id: "comunicacao", label: "Comunicação", description: "Aciona o time de comunicação e divulgação." },
+  { id: "louvor", label: "Louvor", description: "Aciona o ministério de louvor." },
   { id: "juventude", label: "Juventude", description: "Aciona o ministério de juventude." },
   { id: "mulheres", label: "Mulheres", description: "Aciona o ministério de mulheres." },
   { id: "acao_social", label: "Ação Social", description: "Aciona o ministério de ação social." },
