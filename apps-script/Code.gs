@@ -36,7 +36,7 @@ const CONFIG = {
     },
     mulheres: {
       email: ["EMAIL_MULHERES@exemplo.com"],
-      whatsapp: ["55219XXXXXXXX"]
+      whatsapp: ["5521964612429"]
     },
     acao_social: {
       email: ["danielebastosadv@yahoo.com"],
@@ -64,7 +64,7 @@ const CONFIG = {
     },
     eventos: {
       email: ["vinha.p@hotmail.com"],
-      whatsapp: ["55219XXXXXXXX"]
+      whatsapp: ["5521979973777"]
     },
     casais: {
       email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"],
