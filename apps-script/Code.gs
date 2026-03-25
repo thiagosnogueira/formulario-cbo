@@ -107,6 +107,7 @@ function doPost(e) {
     ]);
 
     enviarEmailsMinisterios_(data);
+    enviarWhatsAppMinisterios_(data);
 
     return ContentService
       .createTextOutput(JSON.stringify({
