@@ -73,8 +73,9 @@ const CONFIG = {
   cr: {
     email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"],
     whatsapp: ["5521988977160", "5521988924160"]
+    }
   }
-}
+};
 
 function doGet() {
   return ContentService
