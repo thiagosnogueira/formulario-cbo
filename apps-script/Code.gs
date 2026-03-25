@@ -59,8 +59,8 @@ const CONFIG = {
       whatsapp: ["5521993162056"]
     },
     missoes: {
-      email: ["EMAIL_MISSOES@exemplo.com"],
-      whatsapp: ["55219XXXXXXXX"]
+      email: ["barbaracdgomes@gmail.com"],
+      whatsapp: ["5521995727164"]
     },
     eventos: {
       email: ["vinha.p@hotmail.com"],
