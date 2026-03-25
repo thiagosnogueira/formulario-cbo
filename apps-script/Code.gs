@@ -10,69 +10,69 @@ const CONFIG = {
     "5521996901364"
   ],
   ministries: {
-  recepcao: {
-    email: ["fcotrim25@hotmail.com"],
-    whatsapp: ["5521982411285"]
-  },
-  sonoplastia: {
-    email: ["judsongds@hotmail.com"],
-    whatsapp: ["5521986676434"]
-  },
-  midia: {
-    email: ["EMAIL_MIDIA@exemplo.com"],
-    whatsapp: ["5521999126969"]
-  },
-  comunicacao: {
-    email: ["EMAIL_COMUNICACAO@exemplo.com"],
-    whatsapp: ["55219XXXXXXXX"]
-  },
-  louvor: {
-    email: ["andreyrfreire@gmail.com"],
-    whatsapp: ["5521995215122"]
-  },
-  juventude: {
-    email: ["thiago.thinog@gmail.com", "nogueiraadeline@gmail.com"],
-    whatsapp: ["5521983879944", "5521983429233"]
-  },
-  mulheres: {
-    email: ["EMAIL_MULHERES@exemplo.com"],
-    whatsapp: ["55219XXXXXXXX"]
-  },
-  acao_social: {
-    email: ["danielebastosadv@yahoo.com"],
-    whatsapp: ["5521975458869"]
-  },
-  esportes: {
-    email: ["vladimir.lapa@hotmail.com"],
-    whatsapp: ["5521980120413"]
-  },
-  ensino: {
-    email: ["vilarmilton@gmail.com"],
-    whatsapp: ["5521967758584"]
-  },
-  mensageiras_do_rei: {
-    email: ["nogueiraadeline@gmail.com"],
-    whatsapp: ["5521983429233"]
-  },
-  infantil: {
-    email: ["alenunesp@gmail.com"],
-    whatsapp: ["5521993162056"]
-  },
-  missoes: {
-    email: ["EMAIL_MISSOES@exemplo.com"],
-    whatsapp: ["55219XXXXXXXX"]
-  },
-  eventos: {
-    email: ["vinha.p@hotmail.com"],
-    whatsapp: ["55219XXXXXXXX"]
-  },
-  casais: {
-    email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"],
-    whatsapp: ["5521988977160", "5521988924160"]
-  },
-  cr: {
-    email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"],
-    whatsapp: ["5521988977160", "5521988924160"]
+    recepcao: {
+      email: ["fcotrim25@hotmail.com"],
+      whatsapp: ["5521982411285"]
+    },
+    sonoplastia: {
+      email: ["judsongds@hotmail.com"],
+      whatsapp: ["5521986676434"]
+    },
+    midia: {
+      email: ["EMAIL_MIDIA@exemplo.com"],
+      whatsapp: ["5521999126969"]
+    },
+    comunicacao: {
+      email: ["EMAIL_COMUNICACAO@exemplo.com"],
+      whatsapp: ["55219XXXXXXXX"]
+    },
+    louvor: {
+      email: ["andreyrfreire@gmail.com"],
+      whatsapp: ["5521995215122"]
+    },
+    juventude: {
+      email: ["thiago.thinog@gmail.com", "nogueiraadeline@gmail.com"],
+      whatsapp: ["5521983879944", "5521983429233"]
+    },
+    mulheres: {
+      email: ["EMAIL_MULHERES@exemplo.com"],
+      whatsapp: ["55219XXXXXXXX"]
+    },
+    acao_social: {
+      email: ["danielebastosadv@yahoo.com"],
+      whatsapp: ["5521975458869"]
+    },
+    esportes: {
+      email: ["vladimir.lapa@hotmail.com"],
+      whatsapp: ["5521980120413"]
+    },
+    ensino: {
+      email: ["vilarmilton@gmail.com"],
+      whatsapp: ["5521967758584"]
+    },
+    mensageiras_do_rei: {
+      email: ["nogueiraadeline@gmail.com"],
+      whatsapp: ["5521983429233"]
+    },
+    infantil: {
+      email: ["alenunesp@gmail.com"],
+      whatsapp: ["5521993162056"]
+    },
+    missoes: {
+      email: ["EMAIL_MISSOES@exemplo.com"],
+      whatsapp: ["55219XXXXXXXX"]
+    },
+    eventos: {
+      email: ["vinha.p@hotmail.com"],
+      whatsapp: ["55219XXXXXXXX"]
+    },
+    casais: {
+      email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"],
+      whatsapp: ["5521988977160", "5521988924160"]
+    },
+    cr: {
+      email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"],
+      whatsapp: ["5521988977160", "5521988924160"]
     }
   }
 };
@@ -162,9 +162,11 @@ function validarDados_(data) {
   if (!data.dataHoraInicio) throw new Error("Data e hora de início é obrigatória.");
   if (!data.dataHoraFim) throw new Error("Data e hora de fim é obrigatória.");
   if (!data.objetivo) throw new Error("Objetivo é obrigatório.");
+
   if (!Array.isArray(data.espacos) || data.espacos.length === 0) {
     throw new Error("Selecione ao menos um espaço.");
   }
+
   if (!Array.isArray(data.ministerios) || data.ministerios.length === 0) {
     throw new Error("Selecione ao menos um ministério.");
   }
@@ -205,11 +207,21 @@ function getOrCreateSheet_() {
 
 function enviarEmailsMinisterios_(data) {
   const emailsMinisterios = (data.ministerios || [])
-    .map(id => CONFIG.ministries[id] && CONFIG.ministries[id].email)
+    .flatMap(id => {
+      const ministerio = CONFIG.ministries[id];
+      if (!ministerio || !ministerio.email) return [];
+      return Array.isArray(ministerio.email)
+        ? ministerio.email
+        : [ministerio.email];
+    })
     .filter(Boolean);
 
   const emails = [...new Set([
-    ...(CONFIG.alwaysSendTo ? [CONFIG.alwaysSendTo] : []),
+    ...(Array.isArray(CONFIG.alwaysSendTo)
+      ? CONFIG.alwaysSendTo
+      : CONFIG.alwaysSendTo
+        ? [CONFIG.alwaysSendTo]
+        : []),
     ...emailsMinisterios
   ])];
 
@@ -261,15 +273,6 @@ function enviarEmailsMinisterios_(data) {
   });
 }
 
-function escapeHtml_(text) {
-  return String(text || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
 function enviarWhatsAppMinisterios_(data) {
   const accountSid = PropertiesService.getScriptProperties().getProperty("TWILIO_SID");
   const authToken = PropertiesService.getScriptProperties().getProperty("TWILIO_TOKEN");
@@ -293,7 +296,7 @@ function enviarWhatsAppMinisterios_(data) {
     cr: "CR"
   };
 
-  const numeros = (data.ministerios || [])
+  const numerosMinisterios = (data.ministerios || [])
     .flatMap(id => {
       const ministerio = CONFIG.ministries[id];
       if (!ministerio || !ministerio.whatsapp) return [];
@@ -303,15 +306,22 @@ function enviarWhatsAppMinisterios_(data) {
     })
     .filter(Boolean);
 
-  const numerosUnicos = [...new Set(numeros)];
+  const numeros = [...new Set([
+    ...(Array.isArray(CONFIG.alwaysSendWhatsAppTo)
+      ? CONFIG.alwaysSendWhatsAppTo
+      : CONFIG.alwaysSendWhatsAppTo
+        ? [CONFIG.alwaysSendWhatsAppTo]
+        : []),
+    ...numerosMinisterios
+  ])];
 
-  if (!numerosUnicos.length) return;
+  if (!numeros.length) return;
 
   const ministeriosFormatados = (data.ministerios || [])
     .map(id => labels[id] || id)
     .join(", ");
 
-  numerosUnicos.forEach(numero => {
+  numeros.forEach(numero => {
     const mensagem =
 `📢 *Nova solicitação de evento*
 
@@ -348,6 +358,17 @@ ${ministeriosFormatados}`;
     };
 
     const response = UrlFetchApp.fetch(url, options);
-    Logger.log(response.getContentText());
+    Logger.log("Twilio número: " + numero);
+    Logger.log("Twilio HTTP: " + response.getResponseCode());
+    Logger.log("Twilio resposta: " + response.getContentText());
   });
+}
+
+function escapeHtml_(text) {
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
