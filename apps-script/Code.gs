@@ -5,18 +5,22 @@ const CONFIG = {
     "contato@cboceanica.com.br",
     "tarsis_alecrim@hotmail.com"
   ],
+  alwaysSendWhatsAppTo: [
+    "5521981072211",
+    "5521996901364"
+  ],
   ministries: {
   recepcao: {
     email: ["fcotrim25@hotmail.com"],
-    whatsapp: ["55219XXXXXXXX"]
+    whatsapp: ["5521982411285"]
   },
   sonoplastia: {
     email: ["judsongds@hotmail.com"],
-    whatsapp: ["55219XXXXXXXX"]
+    whatsapp: ["5521986676434"]
   },
   midia: {
     email: ["EMAIL_MIDIA@exemplo.com"],
-    whatsapp: ["55219XXXXXXXX"]
+    whatsapp: ["5521999126969"]
   },
   comunicacao: {
     email: ["EMAIL_COMUNICACAO@exemplo.com"],
@@ -24,11 +28,11 @@ const CONFIG = {
   },
   louvor: {
     email: ["andreyrfreire@gmail.com"],
-    whatsapp: ["55219XXXXXXXX"]
+    whatsapp: ["5521995215122"]
   },
   juventude: {
     email: ["thiago.thinog@gmail.com", "nogueiraadeline@gmail.com"],
-    whatsapp: ["55219XXXXXXXX", "55219XXXXXXXX"]
+    whatsapp: ["5521983879944", "5521983429233"]
   },
   mulheres: {
     email: ["EMAIL_MULHERES@exemplo.com"],
@@ -36,23 +40,23 @@ const CONFIG = {
   },
   acao_social: {
     email: ["danielebastosadv@yahoo.com"],
-    whatsapp: ["55219XXXXXXXX"]
+    whatsapp: ["5521975458869"]
   },
   esportes: {
     email: ["vladimir.lapa@hotmail.com"],
-    whatsapp: ["55219XXXXXXXX"]
+    whatsapp: ["5521980120413"]
   },
   ensino: {
     email: ["vilarmilton@gmail.com"],
-    whatsapp: ["55219XXXXXXXX"]
+    whatsapp: ["5521967758584"]
   },
   mensageiras_do_rei: {
     email: ["nogueiraadeline@gmail.com"],
-    whatsapp: ["55219XXXXXXXX"]
+    whatsapp: ["5521983429233"]
   },
   infantil: {
     email: ["alenunesp@gmail.com"],
-    whatsapp: ["55219XXXXXXXX"]
+    whatsapp: ["5521993162056"]
   },
   missoes: {
     email: ["EMAIL_MISSOES@exemplo.com"],
@@ -64,11 +68,11 @@ const CONFIG = {
   },
   casais: {
     email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"],
-    whatsapp: ["55219XXXXXXXX", "55219XXXXXXXX"]
+    whatsapp: ["5521988977160", "5521988924160"]
   },
   cr: {
     email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"],
-    whatsapp: ["55219XXXXXXXX", "55219XXXXXXXX"]
+    whatsapp: ["5521988977160", "5521988924160"]
   }
 }
 
@@ -262,4 +266,86 @@ function escapeHtml_(text) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function enviarWhatsAppMinisterios_(data) {
+  const accountSid = PropertiesService.getScriptProperties().getProperty("TWILIO_SID");
+  const authToken = PropertiesService.getScriptProperties().getProperty("TWILIO_TOKEN");
+
+  const labels = {
+    recepcao: "Recepção",
+    sonoplastia: "Sonoplastia",
+    midia: "Mídia",
+    comunicacao: "Comunicação",
+    louvor: "Louvor",
+    juventude: "Juventude",
+    mulheres: "Mulheres",
+    acao_social: "Ação Social",
+    esportes: "Esportes",
+    ensino: "Ensino",
+    mensageiras_do_rei: "Mensageiras do Rei",
+    infantil: "Infantil",
+    missoes: "Missões",
+    eventos: "Eventos",
+    casais: "Casais",
+    cr: "CR"
+  };
+
+  const numeros = (data.ministerios || [])
+    .flatMap(id => {
+      const ministerio = CONFIG.ministries[id];
+      if (!ministerio || !ministerio.whatsapp) return [];
+      return Array.isArray(ministerio.whatsapp)
+        ? ministerio.whatsapp
+        : [ministerio.whatsapp];
+    })
+    .filter(Boolean);
+
+  const numerosUnicos = [...new Set(numeros)];
+
+  if (!numerosUnicos.length) return;
+
+  const ministeriosFormatados = (data.ministerios || [])
+    .map(id => labels[id] || id)
+    .join(", ");
+
+  numerosUnicos.forEach(numero => {
+    const mensagem =
+`📢 *Nova solicitação de evento*
+
+📌 *Evento:* ${data.nomeEvento}
+👤 *Responsável:* ${data.nomeResponsavel}
+📞 *Contato:* ${data.contato}
+
+🕐 *Início:* ${data.dataHoraInicio}
+🕐 *Fim:* ${data.dataHoraFim}
+
+📍 *Espaços:* ${(data.espacos || []).join(", ")}
+
+🎯 *Objetivo:*
+${data.objetivo}
+
+👥 *Ministérios acionados:*
+${ministeriosFormatados}`;
+
+    const url = "https://api.twilio.com/2010-04-01/Accounts/" + accountSid + "/Messages.json";
+
+    const payload = {
+      To: "whatsapp:" + numero,
+      From: "whatsapp:+14155238886",
+      Body: mensagem
+    };
+
+    const options = {
+      method: "post",
+      payload: payload,
+      headers: {
+        Authorization: "Basic " + Utilities.base64Encode(accountSid + ":" + authToken)
+      },
+      muteHttpExceptions: true
+    };
+
+    const response = UrlFetchApp.fetch(url, options);
+    Logger.log(response.getContentText());
+  });
 }
