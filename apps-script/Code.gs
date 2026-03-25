@@ -6,24 +6,71 @@ const CONFIG = {
     "tarsis_alecrim@hotmail.com"
   ],
   ministries: {
-    recepcao: { email: "fcotrim25@hotmail.com" },
-    sonoplastia: { email: "judsongds@hotmail.com" },
-    midia: { email: "EMAIL_MIDIA@exemplo.com" },
-    comunicacao: { email: "EMAIL_COMUNICACAO@exemplo.com" },
-    louvor: { email: "andreyrfreire@gmail.com" },
-    juventude: { email: ["thiago.thinog@gmail.com", "nogueiraadeline@gmail.com"] },
-    mulheres: { email: "EMAIL_MULHERES@exemplo.com" },
-    acao_social: { email: "danielebastosadv@yahoo.com" },
-    esportes: { email: "vladimir.lapa@hotmail.com" },
-    ensino: { email: "vilarmilton@gmail.com" },
-    mensageiras_do_rei: { email: "nogueiraadeline@gmail.com" },
-    infantil: { email: "alenunesp@gmail.com" },
-    missoes: { email: "EMAIL_MISSOES@exemplo.com" },
-    eventos: { email: "vinha.p@hotmail.com" },
-    casais: { email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"] },
-    cr: { email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"] }
+  recepcao: {
+    email: ["fcotrim25@hotmail.com"],
+    whatsapp: ["55219XXXXXXXX"]
+  },
+  sonoplastia: {
+    email: ["judsongds@hotmail.com"],
+    whatsapp: ["55219XXXXXXXX"]
+  },
+  midia: {
+    email: ["EMAIL_MIDIA@exemplo.com"],
+    whatsapp: ["55219XXXXXXXX"]
+  },
+  comunicacao: {
+    email: ["EMAIL_COMUNICACAO@exemplo.com"],
+    whatsapp: ["55219XXXXXXXX"]
+  },
+  louvor: {
+    email: ["andreyrfreire@gmail.com"],
+    whatsapp: ["55219XXXXXXXX"]
+  },
+  juventude: {
+    email: ["thiago.thinog@gmail.com", "nogueiraadeline@gmail.com"],
+    whatsapp: ["55219XXXXXXXX", "55219XXXXXXXX"]
+  },
+  mulheres: {
+    email: ["EMAIL_MULHERES@exemplo.com"],
+    whatsapp: ["55219XXXXXXXX"]
+  },
+  acao_social: {
+    email: ["danielebastosadv@yahoo.com"],
+    whatsapp: ["55219XXXXXXXX"]
+  },
+  esportes: {
+    email: ["vladimir.lapa@hotmail.com"],
+    whatsapp: ["55219XXXXXXXX"]
+  },
+  ensino: {
+    email: ["vilarmilton@gmail.com"],
+    whatsapp: ["55219XXXXXXXX"]
+  },
+  mensageiras_do_rei: {
+    email: ["nogueiraadeline@gmail.com"],
+    whatsapp: ["55219XXXXXXXX"]
+  },
+  infantil: {
+    email: ["alenunesp@gmail.com"],
+    whatsapp: ["55219XXXXXXXX"]
+  },
+  missoes: {
+    email: ["EMAIL_MISSOES@exemplo.com"],
+    whatsapp: ["55219XXXXXXXX"]
+  },
+  eventos: {
+    email: ["vinha.p@hotmail.com"],
+    whatsapp: ["55219XXXXXXXX"]
+  },
+  casais: {
+    email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"],
+    whatsapp: ["55219XXXXXXXX", "55219XXXXXXXX"]
+  },
+  cr: {
+    email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"],
+    whatsapp: ["55219XXXXXXXX", "55219XXXXXXXX"]
   }
-};
+}
 
 function doGet() {
   return ContentService
