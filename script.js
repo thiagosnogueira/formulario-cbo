@@ -73,7 +73,6 @@ function validateDateRange(start, end) {
 
 function createHiddenIframe() {
   const iframeName = "apps_script_hidden_iframe";
-
   let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
 
   if (!iframe) {
@@ -106,29 +105,52 @@ function appendHiddenField(tempForm, name, value) {
 }
 
 function sendViaHiddenForm(payload) {
-  const iframeName = createHiddenIframe();
+  return new Promise((resolve, reject) => {
+    const iframeName = createHiddenIframe();
 
-  const tempForm = document.createElement("form");
-  tempForm.method = "POST";
-  tempForm.action = API_URL;
-  tempForm.target = iframeName;
-  tempForm.style.display = "none";
+    const tempForm = document.createElement("form");
+    tempForm.method = "POST";
+    tempForm.action = API_URL;
+    tempForm.target = iframeName;
+    tempForm.style.display = "none";
 
-  appendHiddenField(tempForm, "nomeEvento", payload.nomeEvento);
-  appendHiddenField(tempForm, "nomeResponsavel", payload.nomeResponsavel);
-  appendHiddenField(tempForm, "contato", payload.contato);
-  appendHiddenField(tempForm, "dataHoraInicio", payload.dataHoraInicio);
-  appendHiddenField(tempForm, "dataHoraFim", payload.dataHoraFim);
-  appendHiddenField(tempForm, "espacos", payload.espacos);
-  appendHiddenField(tempForm, "objetivo", payload.objetivo);
-  appendHiddenField(tempForm, "ministerios", payload.ministerios);
+    appendHiddenField(tempForm, "nomeEvento", payload.nomeEvento);
+    appendHiddenField(tempForm, "nomeResponsavel", payload.nomeResponsavel);
+    appendHiddenField(tempForm, "contato", payload.contato);
+    appendHiddenField(tempForm, "dataHoraInicio", payload.dataHoraInicio);
+    appendHiddenField(tempForm, "dataHoraFim", payload.dataHoraFim);
+    appendHiddenField(tempForm, "espacos", payload.espacos);
+    appendHiddenField(tempForm, "objetivo", payload.objetivo);
+    appendHiddenField(tempForm, "ministerios", payload.ministerios);
 
-  document.body.appendChild(tempForm);
-  tempForm.submit();
-  document.body.removeChild(tempForm);
+    document.body.appendChild(tempForm);
+
+    try {
+      tempForm.submit();
+
+      // Dá tempo para o navegador iniciar o POST antes de remover o form
+      setTimeout(() => {
+        try {
+          if (document.body.contains(tempForm)) {
+            document.body.removeChild(tempForm);
+          }
+        } catch (_) {}
+
+        resolve();
+      }, 1500);
+    } catch (error) {
+      try {
+        if (document.body.contains(tempForm)) {
+          document.body.removeChild(tempForm);
+        }
+      } catch (_) {}
+
+      reject(error);
+    }
+  });
 }
 
-function handleSubmit(event) {
+async function handleSubmit(event) {
   event.preventDefault();
   hideFeedback();
 
@@ -170,8 +192,8 @@ function handleSubmit(event) {
   submitButton.textContent = "Enviando...";
 
   try {
-    sendViaHiddenForm(payload);
-    showFeedback("Solicitação enviada com sucesso. Verifique a planilha e os e-mails dos ministérios selecionados.", "success");
+    await sendViaHiddenForm(payload);
+    showFeedback("Solicitação enviada. Aguarde alguns segundos e confira a planilha/notificações.", "success");
     form.reset();
   } catch (error) {
     console.error(error);
