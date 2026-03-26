@@ -71,85 +71,6 @@ function validateDateRange(start, end) {
   return endDate > startDate;
 }
 
-function createHiddenIframe() {
-  const iframeName = "apps_script_hidden_iframe";
-  let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
-
-  if (!iframe) {
-    iframe = document.createElement("iframe");
-    iframe.name = iframeName;
-    iframe.style.display = "none";
-    document.body.appendChild(iframe);
-  }
-
-  return iframeName;
-}
-
-function appendHiddenField(tempForm, name, value) {
-  if (Array.isArray(value)) {
-    value.forEach(item => {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = name;
-      input.value = item;
-      tempForm.appendChild(input);
-    });
-    return;
-  }
-
-  const input = document.createElement("input");
-  input.type = "hidden";
-  input.name = name;
-  input.value = value ?? "";
-  tempForm.appendChild(input);
-}
-
-function sendViaHiddenForm(payload) {
-  return new Promise((resolve, reject) => {
-    const iframeName = createHiddenIframe();
-
-    const tempForm = document.createElement("form");
-    tempForm.method = "POST";
-    tempForm.action = API_URL;
-    tempForm.target = iframeName;
-    tempForm.style.display = "none";
-
-    appendHiddenField(tempForm, "nomeEvento", payload.nomeEvento);
-    appendHiddenField(tempForm, "nomeResponsavel", payload.nomeResponsavel);
-    appendHiddenField(tempForm, "contato", payload.contato);
-    appendHiddenField(tempForm, "dataHoraInicio", payload.dataHoraInicio);
-    appendHiddenField(tempForm, "dataHoraFim", payload.dataHoraFim);
-    appendHiddenField(tempForm, "espacos", payload.espacos);
-    appendHiddenField(tempForm, "objetivo", payload.objetivo);
-    appendHiddenField(tempForm, "ministerios", payload.ministerios);
-
-    document.body.appendChild(tempForm);
-
-    try {
-      tempForm.submit();
-
-      // Dá tempo para o navegador iniciar o POST antes de remover o form
-      setTimeout(() => {
-        try {
-          if (document.body.contains(tempForm)) {
-            document.body.removeChild(tempForm);
-          }
-        } catch (_) {}
-
-        resolve();
-      }, 1500);
-    } catch (error) {
-      try {
-        if (document.body.contains(tempForm)) {
-          document.body.removeChild(tempForm);
-        }
-      } catch (_) {}
-
-      reject(error);
-    }
-  });
-}
-
 async function handleSubmit(event) {
   event.preventDefault();
   hideFeedback();
@@ -192,12 +113,29 @@ async function handleSubmit(event) {
   submitButton.textContent = "Enviando...";
 
   try {
-    await sendViaHiddenForm(payload);
-    showFeedback("Solicitação enviada. Aguarde alguns segundos e confira a planilha/notificações.", "success");
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+
+    const responseText = await response.text();
+
+    let result = {};
+    try {
+      result = JSON.parse(responseText);
+    } catch (_) {
+      result = {};
+    }
+
+    if (result && result.success === false) {
+      throw new Error(result.message || "Erro ao processar a solicitação.");
+    }
+
+    showFeedback("Solicitação enviada com sucesso!", "success");
     form.reset();
   } catch (error) {
     console.error(error);
-    showFeedback("Erro inesperado ao enviar a solicitação.", "error");
+    showFeedback(error.message || "Erro ao enviar a solicitação.", "error");
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Enviar solicitação";
