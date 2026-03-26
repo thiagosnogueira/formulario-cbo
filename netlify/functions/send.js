@@ -12,8 +12,12 @@ exports.handler = async function (event) {
     });
 
     const responseText = await response.text();
+    const contentType = response.headers.get("content-type") || "";
+    const finalUrl = response.url || "";
 
     console.log("Apps Script HTTP:", response.status);
+    console.log("Apps Script final URL:", finalUrl);
+    console.log("Apps Script content-type:", contentType);
     console.log("Apps Script raw response:", responseText);
 
     let result;
@@ -28,7 +32,10 @@ exports.handler = async function (event) {
         body: JSON.stringify({
           success: false,
           error: "Resposta inválida do App Script",
-          raw: responseText.slice(0, 800)
+          status: response.status,
+          contentType,
+          finalUrl,
+          raw: responseText.slice(0, 1200)
         })
       };
     }
@@ -42,6 +49,9 @@ exports.handler = async function (event) {
         body: JSON.stringify({
           success: false,
           error: result.message || "Apps Script não processou a solicitação.",
+          status: response.status,
+          contentType,
+          finalUrl,
           raw: result
         })
       };
