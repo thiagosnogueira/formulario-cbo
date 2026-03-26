@@ -5,14 +5,16 @@ exports.handler = async function (event) {
     const response = await fetch(API_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "text/plain;charset=utf-8"
       },
-      body: event.body
+      body: event.body,
+      redirect: "follow"
     });
 
     const responseText = await response.text();
+
     console.log("Apps Script HTTP:", response.status);
-    console.log("Apps Script body:", responseText);
+    console.log("Apps Script raw response:", responseText);
 
     let result;
     try {
@@ -25,8 +27,8 @@ exports.handler = async function (event) {
         },
         body: JSON.stringify({
           success: false,
-          error: "Resposta inválida do Apps Script",
-          raw: responseText
+          error: "Resposta inválida do App Script",
+          raw: responseText.slice(0, 800)
         })
       };
     }
