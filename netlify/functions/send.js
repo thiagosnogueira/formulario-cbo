@@ -4,18 +4,41 @@ exports.handler = async function (event) {
   try {
     const response = await fetch(API_URL, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: event.body
     });
 
+    const responseText = await response.text();
+
+    let result = {};
+    try {
+      result = JSON.parse(responseText);
+    } catch (_) {
+      result = { success: true };
+    }
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ success: true })
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        success: result.success !== false,
+        message: result.message || "Solicitação enviada com sucesso."
+      })
     };
-
   } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ success: false, error: error.message })
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        success: false,
+        error: error.message || "Erro interno ao enviar solicitação."
+      })
     };
   }
 };
