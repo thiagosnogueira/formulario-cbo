@@ -119,19 +119,7 @@ async function handleSubmit(event) {
     body: JSON.stringify(payload)
   });
 
-    const responseText = await response.text();
-
-    let result = {};
-    try {
-      result = JSON.parse(responseText);
-    } catch (_) {
-      result = {};
-    }
-
-    if (result && result.success === false) {
-      throw new Error(result.message || "Erro ao processar a solicitação.");
-    }
-
+    
     showFeedback("Solicitação enviada com sucesso!", "success");
     form.reset();
   } catch (error) {
