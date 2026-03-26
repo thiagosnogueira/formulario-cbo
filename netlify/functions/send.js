@@ -2,21 +2,33 @@ exports.handler = async function (event) {
   const API_URL = "https://script.google.com/macros/s/AKfycbzi8rH_ynhUwMwXig9SHRuxUMEDlFa9rsPeJfukfvcDCw2m7WaybAnW1-z0yS6LPPeD/exec";
 
   try {
+    const payload = JSON.parse(event.body || "{}");
+
+    const params = new URLSearchParams();
+
+    params.append("nomeEvento", payload.nomeEvento || "");
+    params.append("nomeResponsavel", payload.nomeResponsavel || "");
+    params.append("contato", payload.contato || "");
+    params.append("dataHoraInicio", payload.dataHoraInicio || "");
+    params.append("dataHoraFim", payload.dataHoraFim || "");
+    params.append("objetivo", payload.objetivo || "");
+
+    (payload.espacos || []).forEach(item => params.append("espacos", item));
+    (payload.ministerios || []).forEach(item => params.append("ministerios", item));
+
     const response = await fetch(API_URL, {
       method: "POST",
       headers: {
-        "Content-Type": "text/plain;charset=utf-8"
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
       },
-      body: event.body,
+      body: params.toString(),
       redirect: "follow"
     });
 
     const responseText = await response.text();
     const contentType = response.headers.get("content-type") || "";
-    const finalUrl = response.url || "";
 
     console.log("Apps Script HTTP:", response.status);
-    console.log("Apps Script final URL:", finalUrl);
     console.log("Apps Script content-type:", contentType);
     console.log("Apps Script raw response:", responseText);
 
@@ -32,9 +44,6 @@ exports.handler = async function (event) {
         body: JSON.stringify({
           success: false,
           error: "Resposta inválida do App Script",
-          status: response.status,
-          contentType,
-          finalUrl,
           raw: responseText.slice(0, 1200)
         })
       };
@@ -49,9 +58,6 @@ exports.handler = async function (event) {
         body: JSON.stringify({
           success: false,
           error: result.message || "Apps Script não processou a solicitação.",
-          status: response.status,
-          contentType,
-          finalUrl,
           raw: result
         })
       };
