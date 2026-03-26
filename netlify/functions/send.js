@@ -11,12 +11,38 @@ exports.handler = async function (event) {
     });
 
     const responseText = await response.text();
+    console.log("Apps Script HTTP:", response.status);
+    console.log("Apps Script body:", responseText);
 
-    let result = {};
+    let result;
     try {
       result = JSON.parse(responseText);
-    } catch (_) {
-      result = { success: true };
+    } catch (parseError) {
+      return {
+        statusCode: 502,
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          success: false,
+          error: "Resposta inválida do Apps Script",
+          raw: responseText
+        })
+      };
+    }
+
+    if (!response.ok || result.success !== true) {
+      return {
+        statusCode: 502,
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          success: false,
+          error: result.message || "Apps Script não processou a solicitação.",
+          raw: result
+        })
+      };
     }
 
     return {
@@ -25,11 +51,13 @@ exports.handler = async function (event) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        success: result.success !== false,
+        success: true,
         message: result.message || "Solicitação enviada com sucesso."
       })
     };
   } catch (error) {
+    console.error("Netlify function error:", error);
+
     return {
       statusCode: 500,
       headers: {
