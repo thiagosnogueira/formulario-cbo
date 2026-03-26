@@ -117,7 +117,10 @@ async function handleSubmit(event) {
     const result = await response.json();
 
     if (!response.ok || result.success !== true) {
-      throw new Error(result.error || result.message || "Erro ao enviar solicitação.");
+      const detalhe = result.raw
+        ? ` | RAW: ${typeof result.raw === "string" ? result.raw : JSON.stringify(result.raw)}`
+        : "";
+      throw new Error((result.error || result.message || "Erro ao enviar solicitação.") + detalhe);
     }
 
     showFeedback("Solicitação enviada com sucesso!", "success");
