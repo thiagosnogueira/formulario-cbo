@@ -1,5 +1,3 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzi8rH_ynhUwMwXig9SHRuxUMEDlFa9rsPeJfukfvcDCw2m7WaybAnW1-z0yS6LPPeD/exec";
-
 const SPACES = [
   { id: "templo_maior", label: "Templo Maior" },
   { id: "templo_menor", label: "Templo Menor" },
@@ -71,64 +69,51 @@ function validateDateRange(start, end) {
   return endDate > startDate;
 }
 
-async function handleSubmit(event) {
-  event.preventDefault();
+function removeExistingHiddenFields(fieldName) {
+  form.querySelectorAll(`input[type="hidden"][name="${fieldName}"]`).forEach(el => el.remove());
+}
+
+function appendHiddenArray(fieldName, values) {
+  removeExistingHiddenFields(fieldName);
+
+  values.forEach(value => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = fieldName;
+    input.value = value;
+    form.appendChild(input);
+  });
+}
+
+function handleSubmit(event) {
   hideFeedback();
 
   const espacos = getCheckedValues("espacos");
   const ministerios = getCheckedValues("ministerios");
 
   if (!espacos.length) {
+    event.preventDefault();
     showFeedback("Selecione pelo menos um espaço da igreja.", "error");
     return;
   }
 
   if (!ministerios.length) {
+    event.preventDefault();
     showFeedback("Selecione pelo menos um ministério para ser acionado.", "error");
     return;
   }
 
   if (!validateDateRange(form.dataInicio.value, form.dataFim.value)) {
+    event.preventDefault();
     showFeedback("A data e hora do fim precisam ser maiores que a data e hora do início.", "error");
     return;
   }
 
-  if (!API_URL || API_URL.includes("COLE_AQUI")) {
-    showFeedback("Configure a constante API_URL no arquivo script.js com a URL do Web App do Apps Script.", "error");
-    return;
-  }
-
-  const payload = {
-    nomeEvento: form.nomeEvento.value.trim(),
-    nomeResponsavel: form.responsavel.value.trim(),
-    contato: form.contato.value.trim(),
-    dataHoraInicio: form.dataInicio.value,
-    dataHoraFim: form.dataFim.value,
-    espacos,
-    objetivo: form.objetivo.value.trim(),
-    ministerios
-  };
-
   submitButton.disabled = true;
   submitButton.textContent = "Enviando...";
 
-  try {
-  await fetch(API_URL, {
-    method: "POST",
-    mode: "no-cors",
-    body: JSON.stringify(payload)
-  });
-
-    
-    showFeedback("Solicitação enviada com sucesso!", "success");
-    form.reset();
-  } catch (error) {
-    console.error(error);
-    showFeedback(error.message || "Erro ao enviar a solicitação.", "error");
-  } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = "Enviar solicitação";
-  }
+  appendHiddenArray("espacos", espacos);
+  appendHiddenArray("ministerios", ministerios);
 }
 
 renderCheckboxGroup(spacesContainer, SPACES, "espacos");
