@@ -69,51 +69,66 @@ function validateDateRange(start, end) {
   return endDate > startDate;
 }
 
-function removeExistingHiddenFields(fieldName) {
-  form.querySelectorAll(`input[type="hidden"][name="${fieldName}"]`).forEach(el => el.remove());
-}
-
-function appendHiddenArray(fieldName, values) {
-  removeExistingHiddenFields(fieldName);
-
-  values.forEach(value => {
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.name = fieldName;
-    input.value = value;
-    form.appendChild(input);
-  });
-}
-
-function handleSubmit(event) {
+async function handleSubmit(event) {
+  event.preventDefault();
   hideFeedback();
 
   const espacos = getCheckedValues("espacos");
   const ministerios = getCheckedValues("ministerios");
 
   if (!espacos.length) {
-    event.preventDefault();
     showFeedback("Selecione pelo menos um espaço da igreja.", "error");
     return;
   }
 
   if (!ministerios.length) {
-    event.preventDefault();
     showFeedback("Selecione pelo menos um ministério para ser acionado.", "error");
     return;
   }
 
   if (!validateDateRange(form.dataInicio.value, form.dataFim.value)) {
-    event.preventDefault();
     showFeedback("A data e hora do fim precisam ser maiores que a data e hora do início.", "error");
     return;
   }
 
+  const payload = {
+    nomeEvento: form.nomeEvento.value.trim(),
+    nomeResponsavel: form.responsavel.value.trim(),
+    contato: form.contato.value.trim(),
+    dataHoraInicio: form.dataInicio.value,
+    dataHoraFim: form.dataFim.value,
+    espacos,
+    objetivo: form.objetivo.value.trim(),
+    ministerios
+  };
+
   submitButton.disabled = true;
   submitButton.textContent = "Enviando...";
 
-  appendHiddenArray("espacos", espacos);
-  appendHiddenArray("ministerios", ministerios);
+  try {
+    const response = await fetch("/.netlify/functions/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "Erro ao enviar solicitação.");
+    }
+
+    showFeedback("Solicitação enviada com sucesso!", "success");
+    form.reset();
+  } catch (error) {
+    console.error(error);
+    showFeedback("Erro ao enviar a solicitação. Tente novamente.", "error");
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "Enviar solicitação";
+  }
 }
 
 renderCheckboxGroup(spacesContainer, SPACES, "espacos");
