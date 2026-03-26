@@ -5,32 +5,24 @@ exports.handler = async function (event) {
     const payload = JSON.parse(event.body || "{}");
 
     const params = new URLSearchParams();
-
+    params.append("submit", "1");
     params.append("nomeEvento", payload.nomeEvento || "");
     params.append("nomeResponsavel", payload.nomeResponsavel || "");
     params.append("contato", payload.contato || "");
     params.append("dataHoraInicio", payload.dataHoraInicio || "");
     params.append("dataHoraFim", payload.dataHoraFim || "");
     params.append("objetivo", payload.objetivo || "");
+    params.append("espacos", (payload.espacos || []).join(","));
+    params.append("ministerios", (payload.ministerios || []).join(","));
 
-    (payload.espacos || []).forEach(item => params.append("espacos", item));
-    (payload.ministerios || []).forEach(item => params.append("ministerios", item));
+    const finalUrl = `${API_URL}?${params.toString()}`;
 
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
-      },
-      body: params.toString(),
+    const response = await fetch(finalUrl, {
+      method: "GET",
       redirect: "follow"
     });
 
     const responseText = await response.text();
-    const contentType = response.headers.get("content-type") || "";
-
-    console.log("Apps Script HTTP:", response.status);
-    console.log("Apps Script content-type:", contentType);
-    console.log("Apps Script raw response:", responseText);
 
     let result;
     try {
@@ -57,8 +49,7 @@ exports.handler = async function (event) {
         },
         body: JSON.stringify({
           success: false,
-          error: result.message || "Apps Script não processou a solicitação.",
-          raw: result
+          error: result.message || "Apps Script não processou a solicitação."
         })
       };
     }
@@ -74,8 +65,6 @@ exports.handler = async function (event) {
       })
     };
   } catch (error) {
-    console.error("Netlify function error:", error);
-
     return {
       statusCode: 500,
       headers: {
