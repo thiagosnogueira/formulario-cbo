@@ -116,15 +116,15 @@ async function handleSubmit(event) {
 
     const result = await response.json();
 
-    if (!response.ok || !result.success) {
-      throw new Error(result.error || "Erro ao enviar solicitação.");
+    if (!response.ok || result.success !== true) {
+      throw new Error(result.error || result.message || "Erro ao enviar solicitação.");
     }
 
     showFeedback("Solicitação enviada com sucesso!", "success");
     form.reset();
   } catch (error) {
     console.error(error);
-    showFeedback("Erro ao enviar a solicitação. Tente novamente.", "error");
+    showFeedback(error.message || "Erro ao enviar a solicitação. Tente novamente.", "error");
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "Enviar solicitação";
