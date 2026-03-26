@@ -1,136 +1,72 @@
-const SPACES = [
-  { id: "templo_maior", label: "Templo Maior" },
-  { id: "templo_menor", label: "Templo Menor" },
-  { id: "sala_lideres", label: "Sala dos líderes" },
-  { id: "salao_vermelho", label: "Salão vermelho" },
-  { id: "sala_azul", label: "Sala Azul" },
-  { id: "sala_juventude", label: "Sala da juventude" },
-  { id: "cozinha", label: "Cozinha" },
-  { id: "gramado", label: "Gramado" },
-  { id: "area_lazer", label: "Área de Lazer" },
-  { id: "piscina", label: "Piscina" }
-];
-
-const MINISTRIES = [
-  { id: "recepcao", label: "Recepção", description: "Aciona o time de recepção." },
-  { id: "sonoplastia", label: "Sonoplastia", description: "Aciona o time de som." },
-  { id: "midia", label: "Mídia", description: "Aciona o time de mídia e projeção." },
-  { id: "comunicacao", label: "Comunicação", description: "Aciona o time de comunicação e divulgação." },
-  { id: "louvor", label: "Louvor", description: "Aciona o ministério de louvor." },
-  { id: "juventude", label: "Juventude", description: "Aciona o ministério de juventude." },
-  { id: "mulheres", label: "Mulheres", description: "Aciona o ministério de mulheres." },
-  { id: "acao_social", label: "Ação Social", description: "Aciona o ministério de ação social." },
-  { id: "esportes", label: "Esportes", description: "Aciona o ministério de esportes." },
-  { id: "ensino", label: "Ensino", description: "Aciona o ministério de ensino." },
-  { id: "mensageiras_do_rei", label: "Mensageiras do Rei", description: "Aciona o ministério Mensageiras do Rei." },
-  { id: "infantil", label: "Infantil", description: "Aciona o ministério infantil." },
-  { id: "missoes", label: "Missões", description: "Aciona o ministério de missões." },
-  { id: "eventos", label: "Eventos", description: "Aciona o ministério de eventos." },
-  { id: "casais", label: "Casais", description: "Aciona o ministério de casais." },
-  { id: "cr", label: "CR", description: "Aciona o ministério CR." }
-];
-
-const form = document.getElementById("eventForm");
-const feedback = document.getElementById("feedback");
-const spacesContainer = document.getElementById("spacesContainer");
-const ministriesContainer = document.getElementById("ministriesContainer");
-const submitButton = document.getElementById("submitButton");
-
-function renderCheckboxGroup(container, items, inputName) {
-  container.innerHTML = items.map(item => `
-    <label class="checkbox-card">
-      <input type="checkbox" name="${inputName}" value="${item.id}" />
-      <span>
-        <strong>${item.label}</strong>
-        ${item.description ? `<small>${item.description}</small>` : ""}
-      </span>
-    </label>
-  `).join("");
-}
-
-function showFeedback(message, type) {
-  feedback.className = `feedback ${type}`;
-  feedback.textContent = message;
-  feedback.classList.remove("hidden");
-}
-
-function hideFeedback() {
-  feedback.classList.add("hidden");
-  feedback.textContent = "";
-}
-
-function getCheckedValues(name) {
-  return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(el => el.value);
-}
-
-function validateDateRange(start, end) {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  return endDate > startDate;
-}
-
-async function handleSubmit(event) {
-  event.preventDefault();
-  hideFeedback();
-
-  const espacos = getCheckedValues("espacos");
-  const ministerios = getCheckedValues("ministerios");
-
-  if (!espacos.length) {
-    showFeedback("Selecione pelo menos um espaço da igreja.", "error");
-    return;
-  }
-
-  if (!ministerios.length) {
-    showFeedback("Selecione pelo menos um ministério para ser acionado.", "error");
-    return;
-  }
-
-  if (!validateDateRange(form.dataInicio.value, form.dataFim.value)) {
-    showFeedback("A data e hora do fim precisam ser maiores que a data e hora do início.", "error");
-    return;
-  }
-
-  const payload = {
-    nomeEvento: form.nomeEvento.value.trim(),
-    nomeResponsavel: form.responsavel.value.trim(),
-    contato: form.contato.value.trim(),
-    dataHoraInicio: form.dataInicio.value,
-    dataHoraFim: form.dataFim.value,
-    espacos,
-    objetivo: form.objetivo.value.trim(),
-    ministerios
-  };
-
-  submitButton.disabled = true;
-  submitButton.textContent = "Enviando...";
+exports.handler = async function (event) {
+  const API_URL = "https://script.google.com/macros/s/AKfycbzi8rH_ynhUwMwXig9SHRuxUMEDlFa9rsPeJfukfvcDCw2m7WaybAnW1-z0yS6LPPeD/exec";
 
   try {
-    const response = await fetch("/.netlify/functions/send", {
+    const response = await fetch(API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(payload)
+      body: event.body
     });
 
-    const result = await response.json();
+    const responseText = await response.text();
+    console.log("Apps Script HTTP:", response.status);
+    console.log("Apps Script body:", responseText);
 
-    if (!response.ok || result.success !== true) {
-      throw new Error(result.error || result.message || "Erro ao enviar solicitação.");
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      return {
+        statusCode: 502,
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          success: false,
+          error: "Resposta inválida do Apps Script",
+          raw: responseText
+        })
+      };
     }
 
-    showFeedback("Solicitação enviada com sucesso!", "success");
-    form.reset();
-  } catch (error) {
-    console.error(error);
-    showFeedback(error.message || "Erro ao enviar a solicitação. Tente novamente.", "error");
-  } finally {
-    submitButton.disabled = false;
-    submitButton.textContent = "Enviar solicitação";
-  }
-}
+    if (!response.ok || result.success !== true) {
+      return {
+        statusCode: 502,
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          success: false,
+          error: result.message || "Apps Script não processou a solicitação.",
+          raw: result
+        })
+      };
+    }
 
-renderCheckboxGroup(spacesContainer, SPACES, "espacos");
-renderCheckboxGroup(ministriesContainer, MINISTRIES, "ministerios");
-form.addEventListener("submit", handleSubmit);
+    return {
+      statusCode: 200,
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        success: true,
+        message: result.message || "Solicitação enviada com sucesso."
+      })
+    };
+  } catch (error) {
+    console.error("Netlify function error:", error);
+
+    return {
+      statusCode: 500,
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        success: false,
+        error: error.message || "Erro interno ao enviar solicitação."
+      })
+    };
+  }
+};
