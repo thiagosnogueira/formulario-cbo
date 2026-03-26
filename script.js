@@ -113,10 +113,11 @@ async function handleSubmit(event) {
   submitButton.textContent = "Enviando...";
 
   try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
+  await fetch(API_URL, {
+    method: "POST",
+    mode: "no-cors",
+    body: JSON.stringify(payload)
+  });
 
     const responseText = await response.text();
 
