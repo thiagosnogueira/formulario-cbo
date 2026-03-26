@@ -36,7 +36,7 @@ const CONFIG = {
     },
     mulheres: {
       email: ["EMAIL_MULHERES@exemplo.com"],
-      whatsapp: ["5521964612429"]
+      whatsapp: ["55219XXXXXXXX"]
     },
     acao_social: {
       email: ["danielebastosadv@yahoo.com"],
@@ -59,12 +59,12 @@ const CONFIG = {
       whatsapp: ["5521993162056"]
     },
     missoes: {
-      email: ["barbaracdgomes@gmail.com"],
-      whatsapp: ["5521995727164"]
+      email: ["EMAIL_MISSOES@exemplo.com"],
+      whatsapp: ["55219XXXXXXXX"]
     },
     eventos: {
       email: ["vinha.p@hotmail.com"],
-      whatsapp: ["5521979973777"]
+      whatsapp: ["55219XXXXXXXX"]
     },
     casais: {
       email: ["arquimedes.melo@gmail.com", "marcinhasenamelo@gmail.com"],
@@ -77,53 +77,73 @@ const CONFIG = {
   }
 };
 
-function doGet() {
-  return ContentService
-    .createTextOutput(JSON.stringify({
+function doGet(e) {
+  try {
+    const p = (e && e.parameter) || {};
+
+    if (p.submit === "1") {
+      const data = {
+        nomeEvento: p.nomeEvento || "",
+        nomeResponsavel: p.nomeResponsavel || "",
+        contato: p.contato || "",
+        dataHoraInicio: p.dataHoraInicio || "",
+        dataHoraFim: p.dataHoraFim || "",
+        objetivo: p.objetivo || "",
+        espacos: normalizeCsvArray_(p.espacos),
+        ministerios: normalizeCsvArray_(p.ministerios)
+      };
+
+      return processarSolicitacao_(data);
+    }
+
+    return jsonResponse_({
       success: true,
       message: "Web App ativo."
-    }))
-    .setMimeType(ContentService.MimeType.JSON);
+    });
+  } catch (error) {
+    return jsonResponse_({
+      success: false,
+      message: error.message || "Erro no doGet."
+    });
+  }
 }
 
 function doPost(e) {
   try {
     const data = parseRequestData_(e);
-
-    validarDados_(data);
-
-    const sheet = getOrCreateSheet_();
-
-    sheet.appendRow([
-      new Date(),
-      data.nomeEvento || "",
-      data.nomeResponsavel || "",
-      data.contato || "",
-      data.dataHoraInicio || "",
-      data.dataHoraFim || "",
-      (data.espacos || []).join(", "),
-      data.objetivo || "",
-      (data.ministerios || []).join(", ")
-    ]);
-
-    enviarEmailsMinisterios_(data);
-    enviarWhatsAppMinisterios_(data);
-
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        success: true,
-        message: "Solicitação enviada com sucesso."
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
-
+    return processarSolicitacao_(data);
   } catch (error) {
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        success: false,
-        message: error.message || "Erro ao processar solicitação."
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return jsonResponse_({
+      success: false,
+      message: error.message || "Erro ao processar solicitação."
+    });
   }
+}
+
+function processarSolicitacao_(data) {
+  validarDados_(data);
+
+  const sheet = getOrCreateSheet_();
+
+  sheet.appendRow([
+    new Date(),
+    data.nomeEvento || "",
+    data.nomeResponsavel || "",
+    data.contato || "",
+    data.dataHoraInicio || "",
+    data.dataHoraFim || "",
+    (data.espacos || []).join(", "),
+    data.objetivo || "",
+    (data.ministerios || []).join(", ")
+  ]);
+
+  enviarEmailsMinisterios_(data);
+  enviarWhatsAppMinisterios_(data);
+
+  return jsonResponse_({
+    success: true,
+    message: "Solicitação enviada com sucesso."
+  });
 }
 
 function parseRequestData_(e) {
@@ -131,7 +151,7 @@ function parseRequestData_(e) {
     try {
       return JSON.parse(e.postData.contents);
     } catch (err) {
-      // se não for JSON, continua para ler como form POST
+      // continua
     }
   }
 
@@ -153,6 +173,14 @@ function parseRequestData_(e) {
 function normalizeArray_(value) {
   if (!value) return [];
   return Array.isArray(value) ? value : [value];
+}
+
+function normalizeCsvArray_(value) {
+  if (!value) return [];
+  return String(value)
+    .split(",")
+    .map(item => item.trim())
+    .filter(Boolean);
 }
 
 function validarDados_(data) {
@@ -210,41 +238,18 @@ function enviarEmailsMinisterios_(data) {
     .flatMap(id => {
       const ministerio = CONFIG.ministries[id];
       if (!ministerio || !ministerio.email) return [];
-      return Array.isArray(ministerio.email)
-        ? ministerio.email
-        : [ministerio.email];
+      return Array.isArray(ministerio.email) ? ministerio.email : [ministerio.email];
     })
     .filter(Boolean);
 
   const emails = [...new Set([
-    ...(Array.isArray(CONFIG.alwaysSendTo)
-      ? CONFIG.alwaysSendTo
-      : CONFIG.alwaysSendTo
-        ? [CONFIG.alwaysSendTo]
-        : []),
+    ...(Array.isArray(CONFIG.alwaysSendTo) ? CONFIG.alwaysSendTo : []),
     ...emailsMinisterios
   ])];
 
   if (!emails.length) return;
 
-  const labels = {
-    recepcao: "Recepção",
-    sonoplastia: "Sonoplastia",
-    midia: "Mídia",
-    comunicacao: "Comunicação",
-    louvor: "Louvor",
-    juventude: "Juventude",
-    mulheres: "Mulheres",
-    acao_social: "Ação Social",
-    esportes: "Esportes",
-    ensino: "Ensino",
-    mensageiras_do_rei: "Mensageiras do Rei",
-    infantil: "Infantil",
-    missoes: "Missões",
-    eventos: "Eventos",
-    casais: "Casais",
-    cr: "CR"
-  };
+  const labels = getLabels_();
 
   const ministeriosFormatados = (data.ministerios || [])
     .map(id => labels[id] || id)
@@ -277,41 +282,18 @@ function enviarWhatsAppMinisterios_(data) {
   const accountSid = PropertiesService.getScriptProperties().getProperty("TWILIO_SID");
   const authToken = PropertiesService.getScriptProperties().getProperty("TWILIO_TOKEN");
 
-  const labels = {
-    recepcao: "Recepção",
-    sonoplastia: "Sonoplastia",
-    midia: "Mídia",
-    comunicacao: "Comunicação",
-    louvor: "Louvor",
-    juventude: "Juventude",
-    mulheres: "Mulheres",
-    acao_social: "Ação Social",
-    esportes: "Esportes",
-    ensino: "Ensino",
-    mensageiras_do_rei: "Mensageiras do Rei",
-    infantil: "Infantil",
-    missoes: "Missões",
-    eventos: "Eventos",
-    casais: "Casais",
-    cr: "CR"
-  };
+  const labels = getLabels_();
 
   const numerosMinisterios = (data.ministerios || [])
     .flatMap(id => {
       const ministerio = CONFIG.ministries[id];
       if (!ministerio || !ministerio.whatsapp) return [];
-      return Array.isArray(ministerio.whatsapp)
-        ? ministerio.whatsapp
-        : [ministerio.whatsapp];
+      return Array.isArray(ministerio.whatsapp) ? ministerio.whatsapp : [ministerio.whatsapp];
     })
     .filter(Boolean);
 
   const numeros = [...new Set([
-    ...(Array.isArray(CONFIG.alwaysSendWhatsAppTo)
-      ? CONFIG.alwaysSendWhatsAppTo
-      : CONFIG.alwaysSendWhatsAppTo
-        ? [CONFIG.alwaysSendWhatsAppTo]
-        : []),
+    ...(Array.isArray(CONFIG.alwaysSendWhatsAppTo) ? CONFIG.alwaysSendWhatsAppTo : []),
     ...numerosMinisterios
   ])];
 
@@ -357,11 +339,35 @@ ${ministeriosFormatados}`;
       muteHttpExceptions: true
     };
 
-    const response = UrlFetchApp.fetch(url, options);
-    Logger.log("Twilio número: " + numero);
-    Logger.log("Twilio HTTP: " + response.getResponseCode());
-    Logger.log("Twilio resposta: " + response.getContentText());
+    UrlFetchApp.fetch(url, options);
   });
+}
+
+function getLabels_() {
+  return {
+    recepcao: "Recepção",
+    sonoplastia: "Sonoplastia",
+    midia: "Mídia",
+    comunicacao: "Comunicação",
+    louvor: "Louvor",
+    juventude: "Juventude",
+    mulheres: "Mulheres",
+    acao_social: "Ação Social",
+    esportes: "Esportes",
+    ensino: "Ensino",
+    mensageiras_do_rei: "Mensageiras do Rei",
+    infantil: "Infantil",
+    missoes: "Missões",
+    eventos: "Eventos",
+    casais: "Casais",
+    cr: "CR"
+  };
+}
+
+function jsonResponse_(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function escapeHtml_(text) {
