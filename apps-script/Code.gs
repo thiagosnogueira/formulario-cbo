@@ -24,7 +24,7 @@ const CONFIG = {
     },
     comunicacao: {
       email: ["EMAIL_COMUNICACAO@exemplo.com"],
-      whatsapp: ["21968416623"]
+      whatsapp: ["55219XXXXXXXX"]
     },
     louvor: {
       email: ["andreyrfreire@gmail.com"],
@@ -36,7 +36,7 @@ const CONFIG = {
     },
     mulheres: {
       email: ["EMAIL_MULHERES@exemplo.com"],
-      whatsapp: ["5521964612429"]
+      whatsapp: ["55219XXXXXXXX"]
     },
     acao_social: {
       email: ["danielebastosadv@yahoo.com"],
@@ -59,8 +59,8 @@ const CONFIG = {
       whatsapp: ["5521993162056"]
     },
     missoes: {
-      email: ["barbaracdgomes@gmail.com"],
-      whatsapp: ["5521995727164"]
+      email: ["EMAIL_MISSOES@exemplo.com"],
+      whatsapp: ["55219XXXXXXXX"]
     },
     eventos: {
       email: ["vinha.p@hotmail.com"],
@@ -282,6 +282,11 @@ function enviarWhatsAppMinisterios_(data) {
   const accountSid = PropertiesService.getScriptProperties().getProperty("TWILIO_SID");
   const authToken = PropertiesService.getScriptProperties().getProperty("TWILIO_TOKEN");
 
+  if (!accountSid || !authToken) {
+    logDebug_("TWILIO_ERRO", "TWILIO_SID ou TWILIO_TOKEN não encontrados nas Script Properties");
+    return;
+  }
+
   const labels = getLabels_();
 
   const numerosMinisterios = (data.ministerios || [])
@@ -297,7 +302,10 @@ function enviarWhatsAppMinisterios_(data) {
     ...numerosMinisterios
   ])];
 
-  if (!numeros.length) return;
+  if (!numeros.length) {
+    logDebug_("TWILIO_ERRO", "Nenhum número encontrado para envio");
+    return;
+  }
 
   const ministeriosFormatados = (data.ministerios || [])
     .map(id => labels[id] || id)
@@ -339,7 +347,11 @@ ${ministeriosFormatados}`;
       muteHttpExceptions: true
     };
 
-    UrlFetchApp.fetch(url, options);
+    const response = UrlFetchApp.fetch(url, options);
+
+    logDebug_("TWILIO_NUMERO", numero);
+    logDebug_("TWILIO_HTTP", String(response.getResponseCode()));
+    logDebug_("TWILIO_RESPOSTA", response.getContentText());
   });
 }
 
@@ -362,6 +374,18 @@ function getLabels_() {
     casais: "Casais",
     cr: "CR"
   };
+}
+
+function logDebug_(tipo, mensagem) {
+  const ss = SpreadsheetApp.openById(CONFIG.spreadsheetId);
+  let sheet = ss.getSheetByName("Debug");
+
+  if (!sheet) {
+    sheet = ss.insertSheet("Debug");
+    sheet.appendRow(["Timestamp", "Tipo", "Mensagem"]);
+  }
+
+  sheet.appendRow([new Date(), tipo, mensagem]);
 }
 
 function jsonResponse_(obj) {
