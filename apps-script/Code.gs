@@ -1,14 +1,17 @@
 const CONFIG = {
   spreadsheetId: "1QXcJTR9daMCyhz416zLePsiLSzHW3FcQfpADxpqzVTw",
   sheetName: "Solicitacoes",
+
   alwaysSendTo: [
     "contato@cboceanica.com.br",
     "tarsis_alecrim@hotmail.com"
   ],
+
   alwaysSendWhatsAppTo: [
     "5521981072211",
     "5521996901364"
   ],
+
   ministries: {
     recepcao: {
       email: ["fcotrim25@hotmail.com"],
@@ -77,42 +80,29 @@ const CONFIG = {
   }
 };
 
-function doGet(e) {
-  try {
-    const p = (e && e.parameter) || {};
-
-    if (p.submit === "1") {
-      const data = {
-        nomeEvento: p.nomeEvento || "",
-        nomeResponsavel: p.nomeResponsavel || "",
-        contato: p.contato || "",
-        dataHoraInicio: p.dataHoraInicio || "",
-        dataHoraFim: p.dataHoraFim || "",
-        objetivo: p.objetivo || "",
-        espacos: normalizeCsvArray_(p.espacos),
-        ministerios: normalizeCsvArray_(p.ministerios)
-      };
-
-      return processarSolicitacao_(data);
-    }
-
-    return jsonResponse_({
-      success: true,
-      message: "Web App ativo."
-    });
-  } catch (error) {
-    return jsonResponse_({
-      success: false,
-      message: error.message || "Erro no doGet."
-    });
-  }
+function doGet() {
+  return jsonResponse_({
+    success: true,
+    message: "Web App ativo."
+  });
 }
 
 function doPost(e) {
   try {
     const data = parseRequestData_(e);
-    return processarSolicitacao_(data);
+
+    validarDados_(data);
+
+    salvarSolicitacao_(data);
+    enviarEmailsMinisterios_(data);
+    enviarWhatsAppMinisterios_(data);
+
+    return jsonResponse_({
+      success: true,
+      message: "Solicitação enviada com sucesso."
+    });
   } catch (error) {
+    registrarErro_("PROCESSAMENTO", error);
     return jsonResponse_({
       success: false,
       message: error.message || "Erro ao processar solicitação."
@@ -120,67 +110,35 @@ function doPost(e) {
   }
 }
 
-function processarSolicitacao_(data) {
-  validarDados_(data);
-
-  const sheet = getOrCreateSheet_();
-
-  sheet.appendRow([
-    new Date(),
-    data.nomeEvento || "",
-    data.nomeResponsavel || "",
-    data.contato || "",
-    data.dataHoraInicio || "",
-    data.dataHoraFim || "",
-    (data.espacos || []).join(", "),
-    data.objetivo || "",
-    (data.ministerios || []).join(", ")
-  ]);
-
-  enviarEmailsMinisterios_(data);
-  enviarWhatsAppMinisterios_(data);
-
-  return jsonResponse_({
-    success: true,
-    message: "Solicitação enviada com sucesso."
-  });
-}
-
 function parseRequestData_(e) {
-  if (e.postData && e.postData.contents) {
-    try {
-      return JSON.parse(e.postData.contents);
-    } catch (err) {
-      // continua
-    }
+  if (!e || !e.postData || !e.postData.contents) {
+    throw new Error("Corpo da requisição não recebido.");
   }
 
-  const p = e.parameter || {};
-  const ps = e.parameters || {};
+  let payload;
+  try {
+    payload = JSON.parse(e.postData.contents);
+  } catch (err) {
+    throw new Error("JSON inválido no corpo da requisição.");
+  }
 
   return {
-    nomeEvento: p.nomeEvento || "",
-    nomeResponsavel: p.nomeResponsavel || "",
-    contato: p.contato || "",
-    dataHoraInicio: p.dataHoraInicio || "",
-    dataHoraFim: p.dataHoraFim || "",
-    objetivo: p.objetivo || "",
-    espacos: normalizeArray_(ps.espacos || p.espacos),
-    ministerios: normalizeArray_(ps.ministerios || p.ministerios)
+    nomeEvento: (payload.nomeEvento || "").trim(),
+    nomeResponsavel: (payload.nomeResponsavel || "").trim(),
+    contato: (payload.contato || "").trim(),
+    dataHoraInicio: payload.dataHoraInicio || "",
+    dataHoraFim: payload.dataHoraFim || "",
+    objetivo: (payload.objetivo || "").trim(),
+    espacos: normalizeArray_(payload.espacos),
+    ministerios: normalizeArray_(payload.ministerios)
   };
 }
 
 function normalizeArray_(value) {
   if (!value) return [];
-  return Array.isArray(value) ? value : [value];
-}
-
-function normalizeCsvArray_(value) {
-  if (!value) return [];
-  return String(value)
-    .split(",")
-    .map(item => item.trim())
-    .filter(Boolean);
+  return Array.isArray(value)
+    ? value.map(String).map(v => v.trim()).filter(Boolean)
+    : [String(value).trim()].filter(Boolean);
 }
 
 function validarDados_(data) {
@@ -209,6 +167,22 @@ function validarDados_(data) {
   if (fim <= inicio) {
     throw new Error("A data/hora de fim deve ser maior que a de início.");
   }
+}
+
+function salvarSolicitacao_(data) {
+  const sheet = getOrCreateSheet_();
+
+  sheet.appendRow([
+    new Date(),
+    data.nomeEvento,
+    data.nomeResponsavel,
+    data.contato,
+    data.dataHoraInicio,
+    data.dataHoraFim,
+    data.espacos.join(", "),
+    data.objetivo,
+    data.ministerios.join(", ")
+  ]);
 }
 
 function getOrCreateSheet_() {
@@ -240,7 +214,10 @@ function enviarEmailsMinisterios_(data) {
       if (!ministerio || !ministerio.email) return [];
       return Array.isArray(ministerio.email) ? ministerio.email : [ministerio.email];
     })
-    .filter(Boolean);
+    .map(String)
+    .map(v => v.trim())
+    .filter(Boolean)
+    .filter(email => !/@exemplo\.com$/i.test(email));
 
   const emails = [...new Set([
     ...(Array.isArray(CONFIG.alwaysSendTo) ? CONFIG.alwaysSendTo : []),
@@ -250,7 +227,6 @@ function enviarEmailsMinisterios_(data) {
   if (!emails.length) return;
 
   const labels = getLabels_();
-
   const ministeriosFormatados = (data.ministerios || [])
     .map(id => labels[id] || id)
     .join(", ");
@@ -263,9 +239,9 @@ function enviarEmailsMinisterios_(data) {
       <p><strong>Nome do evento:</strong> ${escapeHtml_(data.nomeEvento)}</p>
       <p><strong>Responsável:</strong> ${escapeHtml_(data.nomeResponsavel)}</p>
       <p><strong>Contato:</strong> ${escapeHtml_(data.contato)}</p>
-      <p><strong>Início:</strong> ${escapeHtml_(data.dataHoraInicio)}</p>
-      <p><strong>Fim:</strong> ${escapeHtml_(data.dataHoraFim)}</p>
-      <p><strong>Espaços:</strong> ${escapeHtml_((data.espacos || []).join(", "))}</p>
+      <p><strong>Início:</strong> ${escapeHtml_(formatDateTime_(data.dataHoraInicio))}</p>
+      <p><strong>Fim:</strong> ${escapeHtml_(formatDateTime_(data.dataHoraFim))}</p>
+      <p><strong>Espaços:</strong> ${escapeHtml_(data.espacos.join(", "))}</p>
       <p><strong>Objetivo:</strong> ${escapeHtml_(data.objetivo)}</p>
       <p><strong>Ministérios acionados:</strong> ${escapeHtml_(ministeriosFormatados)}</p>
     </div>
@@ -279,11 +255,28 @@ function enviarEmailsMinisterios_(data) {
 }
 
 function enviarWhatsAppMinisterios_(data) {
-  const accountSid = PropertiesService.getScriptProperties().getProperty("TWILIO_SID");
-  const authToken = PropertiesService.getScriptProperties().getProperty("TWILIO_TOKEN");
+  const props = PropertiesService.getScriptProperties();
 
-  if (!accountSid || !authToken) {
-    logDebug_("TWILIO_ERRO", "TWILIO_SID ou TWILIO_TOKEN não encontrados nas Script Properties");
+  const provider = (props.getProperty("WHATSAPP_PROVIDER") || "meta").toLowerCase();
+
+  if (provider === "meta") {
+    enviarWhatsAppMeta_(data);
+    return;
+  }
+
+  throw new Error("Provider de WhatsApp não suportado.");
+}
+
+function enviarWhatsAppMeta_(data) {
+  const props = PropertiesService.getScriptProperties();
+  const accessToken = props.getProperty("META_ACCESS_TOKEN");
+  const phoneNumberId = props.getProperty("META_PHONE_NUMBER_ID");
+  const apiVersion = props.getProperty("META_API_VERSION") || "v25.0";
+  const templateName = props.getProperty("META_TEMPLATE_NAME");
+  const templateLang = props.getProperty("META_TEMPLATE_LANG") || "pt_BR";
+
+  if (!accessToken || !phoneNumberId || !templateName) {
+    registrarLogSimples_("WHATSAPP_META_CONFIG", "Faltam META_ACCESS_TOKEN, META_PHONE_NUMBER_ID ou META_TEMPLATE_NAME");
     return;
   }
 
@@ -295,64 +288,78 @@ function enviarWhatsAppMinisterios_(data) {
       if (!ministerio || !ministerio.whatsapp) return [];
       return Array.isArray(ministerio.whatsapp) ? ministerio.whatsapp : [ministerio.whatsapp];
     })
-    .filter(Boolean);
+    .map(String)
+    .map(v => onlyDigits_(v))
+    .filter(Boolean)
+    .filter(numero => !/X/.test(numero));
 
   const numeros = [...new Set([
-    ...(Array.isArray(CONFIG.alwaysSendWhatsAppTo) ? CONFIG.alwaysSendWhatsAppTo : []),
+    ...(Array.isArray(CONFIG.alwaysSendWhatsAppTo) ? CONFIG.alwaysSendWhatsAppTo.map(onlyDigits_) : []),
     ...numerosMinisterios
-  ])];
+  ])].filter(Boolean);
 
-  if (!numeros.length) {
-    logDebug_("TWILIO_ERRO", "Nenhum número encontrado para envio");
-    return;
-  }
+  if (!numeros.length) return;
 
   const ministeriosFormatados = (data.ministerios || [])
     .map(id => labels[id] || id)
     .join(", ");
 
-  numeros.forEach(numero => {
-    const mensagem =
-`📢 *Nova solicitação de evento*
+  const endpoint = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
 
-📌 *Evento:* ${data.nomeEvento}
-👤 *Responsável:* ${data.nomeResponsavel}
-📞 *Contato:* ${data.contato}
+  const requests = numeros.map(numero => ({
+    url: endpoint,
+    method: "post",
+    contentType: "application/json",
+    headers: {
+      Authorization: "Bearer " + accessToken
+    },
+    payload: JSON.stringify({
+      messaging_product: "whatsapp",
+      to: numero,
+      type: "template",
+      template: {
+        name: templateName,
+        language: { code: templateLang },
+        components: [
+          {
+            type: "body",
+            parameters: [
+              { type: "text", text: safeTemplateText_(data.nomeEvento) },
+              { type: "text", text: safeTemplateText_(data.nomeResponsavel) },
+              { type: "text", text: safeTemplateText_(data.contato) },
+              { type: "text", text: safeTemplateText_(formatDateTime_(data.dataHoraInicio)) },
+              { type: "text", text: safeTemplateText_(formatDateTime_(data.dataHoraFim)) },
+              { type: "text", text: safeTemplateText_(data.espacos.join(", ")) },
+              { type: "text", text: safeTemplateText_(data.objetivo) },
+              { type: "text", text: safeTemplateText_(ministeriosFormatados) }
+            ]
+          }
+        ]
+      }
+    }),
+    muteHttpExceptions: true
+  }));
 
-🕐 *Início:* ${data.dataHoraInicio}
-🕐 *Fim:* ${data.dataHoraFim}
+  const responses = UrlFetchApp.fetchAll(requests);
 
-📍 *Espaços:* ${(data.espacos || []).join(", ")}
-
-🎯 *Objetivo:*
-${data.objetivo}
-
-👥 *Ministérios acionados:*
-${ministeriosFormatados}`;
-
-    const url = "https://api.twilio.com/2010-04-01/Accounts/" + accountSid + "/Messages.json";
-
-    const payload = {
-      To: "whatsapp:" + numero,
-      From: "whatsapp:+14155238886",
-      Body: mensagem
-    };
-
-    const options = {
-      method: "post",
-      payload: payload,
-      headers: {
-        Authorization: "Basic " + Utilities.base64Encode(accountSid + ":" + authToken)
-      },
-      muteHttpExceptions: true
-    };
-
-    const response = UrlFetchApp.fetch(url, options);
-
-    logDebug_("TWILIO_NUMERO", numero);
-    logDebug_("TWILIO_HTTP", String(response.getResponseCode()));
-    logDebug_("TWILIO_RESPOSTA", response.getContentText());
+  const falhas = [];
+  responses.forEach((res, index) => {
+    const code = res.getResponseCode();
+    if (code < 200 || code >= 300) {
+      falhas.push({
+        numero: numeros[index],
+        code: code,
+        body: res.getContentText()
+      });
+    }
   });
+
+  if (falhas.length) {
+    registrarLogSimples_(
+      "WHATSAPP_META_FALHAS",
+      JSON.stringify(falhas).slice(0, 45000)
+    );
+  }
 }
 
 function getLabels_() {
@@ -376,16 +383,49 @@ function getLabels_() {
   };
 }
 
-function logDebug_(tipo, mensagem) {
-  const ss = SpreadsheetApp.openById(CONFIG.spreadsheetId);
-  let sheet = ss.getSheetByName("Debug");
+function registrarErro_(tipo, error) {
+  const mensagem = [
+    error && error.message ? error.message : "Erro sem mensagem",
+    error && error.stack ? error.stack : ""
+  ].join("\n\n");
 
-  if (!sheet) {
-    sheet = ss.insertSheet("Debug");
-    sheet.appendRow(["Timestamp", "Tipo", "Mensagem"]);
+  registrarLogSimples_(tipo, mensagem);
+}
+
+function registrarLogSimples_(tipo, mensagem) {
+  try {
+    const ss = SpreadsheetApp.openById(CONFIG.spreadsheetId);
+    let sheet = ss.getSheetByName("Debug");
+
+    if (!sheet) {
+      sheet = ss.insertSheet("Debug");
+      sheet.appendRow(["Timestamp", "Tipo", "Mensagem"]);
+    }
+
+    sheet.appendRow([new Date(), tipo, String(mensagem || "")]);
+  } catch (e) {
+    Logger.log("Falha ao registrar log: " + e.message);
   }
+}
 
-  sheet.appendRow([new Date(), tipo, mensagem]);
+function formatDateTime_(value) {
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return String(value || "");
+
+  return Utilities.formatDate(
+    date,
+    Session.getScriptTimeZone() || "America/Sao_Paulo",
+    "dd/MM/yyyy 'às' HH:mm"
+  );
+}
+
+function onlyDigits_(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function safeTemplateText_(value) {
+  const text = String(value || "").trim();
+  return text ? text.substring(0, 1024) : "-";
 }
 
 function jsonResponse_(obj) {
